@@ -1,0 +1,10 @@
+.git
+.env
+**/.env
+**/dist
+**/node_modules
+mobile/.expo
+mobile/android
+mobile/ios
+outputs
+work

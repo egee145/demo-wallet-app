@@ -1,0 +1,49 @@
+services:
+  postgres-dev:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: hepantalya
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d hepantalya']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - '5433:5432'
+    volumes:
+      - hepantalya-postgres:/var/lib/postgresql/data
+
+  postgres-test:
+    image: postgres:17-bookworm
+    profiles: ['test']
+    environment:
+      POSTGRES_DB: hepantalya_test
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d hepantalya_test']
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    ports:
+      - '5434:5432'
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      postgres-dev:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres-dev:5432/hepantalya?schema=wallet_app
+      DIRECT_URL: postgresql://postgres:postgres@postgres-dev:5432/hepantalya?schema=wallet_app
+      JWT_ACCESS_SECRET: development-only-change-this-secret-32-bytes
+      NODE_ENV: development
+    ports:
+      - '3000:3000'
+
+volumes:
+  hepantalya-postgres:

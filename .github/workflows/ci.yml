@@ -1,0 +1,54 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_DB: hepantalya_test
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hepantalya_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hepantalya_test?schema=wallet_app
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/hepantalya_test?schema=wallet_app
+      JWT_ACCESS_SECRET: ci-only-ci-only-ci-only-ci-only-ci-only
+      NODE_ENV: test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hepantalya_test?schema=wallet_app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm prisma:validate
+      - run: pnpm prisma:generate
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm --filter @hepantalya/backend prisma:migrate:deploy
+      - run: pnpm test:unit
+      - run: pnpm test:integration
+      - run: pnpm test:concurrency
+      - run: pnpm mobile:test
+      - run: pnpm build
+      - run: pnpm mobile:doctor
+      - run: pnpm mobile:export
+      - run: docker build -f backend/Dockerfile .

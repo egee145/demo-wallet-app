@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+backend/src/generated/
+mobile/android/
+mobile/ios/
+pnpm-lock.yaml

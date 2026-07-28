@@ -1,0 +1,322 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["wallet_app"]
+}
+
+enum Role {
+  USER
+  MERCHANT
+  ADMIN
+
+  @@schema("wallet_app")
+}
+
+enum WalletOwnerType {
+  USER
+  MERCHANT
+
+  @@schema("wallet_app")
+}
+
+enum Currency {
+  TRY
+
+  @@schema("wallet_app")
+}
+
+enum PaymentSessionStatus {
+  WAITING
+  PAID
+  EXPIRED
+  CANCELLED
+
+  @@schema("wallet_app")
+}
+
+enum PaymentMethod {
+  NFC
+  QR
+
+  @@schema("wallet_app")
+}
+
+enum TransactionStatus {
+  SUCCESS
+  FAILED
+
+  @@schema("wallet_app")
+}
+
+enum AttemptStatus {
+  SUCCESS
+  FAILED
+
+  @@schema("wallet_app")
+}
+
+enum IdempotencyActorType {
+  USER
+  MERCHANT
+  ADMIN
+
+  @@schema("wallet_app")
+}
+
+enum IdempotencyStatus {
+  PROCESSING
+  COMPLETED
+
+  @@schema("wallet_app")
+}
+
+enum AdjustmentType {
+  DEPOSIT
+
+  @@schema("wallet_app")
+}
+
+enum NfcCardStatus {
+  ACTIVE
+  REVOKED
+
+  @@schema("wallet_app")
+}
+
+enum WalletTopUpProvider {
+  MOCK
+
+  @@schema("wallet_app")
+}
+
+enum WalletTopUpStatus {
+  COMPLETED
+
+  @@schema("wallet_app")
+}
+
+model User {
+  id              String             @id @default(uuid()) @db.Uuid
+  name            String             @db.VarChar(100)
+  email           String             @unique @db.VarChar(254)
+  phone           String?            @unique @db.VarChar(20)
+  passwordHash    String             @map("password_hash") @db.VarChar(255)
+  role            Role               @default(USER)
+  isActive        Boolean            @default(true) @map("is_active")
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  wallet          Wallet?
+  merchant        Merchant?
+  refreshSessions RefreshSession[]
+  adjustments     WalletAdjustment[] @relation("AdjustmentAdmin")
+  paymentAttempts PaymentAttempt[]   @relation("AttemptPayer")
+  nfcCard         NfcCard?
+  walletTopUps    WalletTopUp[]
+
+  @@index([role, isActive])
+  @@map("users")
+  @@schema("wallet_app")
+}
+
+model Wallet {
+  id          String             @id @default(uuid()) @db.Uuid
+  ownerType   WalletOwnerType    @map("owner_type")
+  userId      String?            @unique @map("user_id") @db.Uuid
+  balance     Decimal            @default(0) @db.Decimal(18, 2)
+  currency    Currency           @default(TRY)
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user        User?              @relation(fields: [userId], references: [id], onDelete: Restrict)
+  merchant    Merchant?          @relation("MerchantWallet")
+  outgoing    Transaction[]      @relation("TransactionFromWallet")
+  incoming    Transaction[]      @relation("TransactionToWallet")
+  adjustments WalletAdjustment[]
+  topUps      WalletTopUp[]
+
+  @@unique([id, ownerType])
+  @@map("wallets")
+  @@schema("wallet_app")
+}
+
+model NfcCard {
+  id         String        @id @default(uuid()) @db.Uuid
+  userId     String        @unique @map("user_id") @db.Uuid
+  tagUidHash String        @unique @map("tag_uid_hash") @db.Char(64)
+  label      String        @default("HepAntalya Card") @db.VarChar(80)
+  status     NfcCardStatus @default(ACTIVE)
+  boundAt    DateTime      @default(now()) @map("bound_at") @db.Timestamptz(3)
+  updatedAt  DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([status])
+  @@map("nfc_cards")
+  @@schema("wallet_app")
+}
+
+model WalletTopUp {
+  id             String              @id @default(uuid()) @db.Uuid
+  userId         String              @map("user_id") @db.Uuid
+  walletId       String              @map("wallet_id") @db.Uuid
+  amount         Decimal             @db.Decimal(18, 2)
+  currency       Currency            @default(TRY)
+  provider       WalletTopUpProvider @default(MOCK)
+  status         WalletTopUpStatus   @default(COMPLETED)
+  cardLast4      String              @map("card_last4") @db.Char(4)
+  cardholderName String              @map("cardholder_name") @db.VarChar(100)
+  idempotencyKey String              @map("idempotency_key") @db.Uuid
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  user           User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  wallet         Wallet              @relation(fields: [walletId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, idempotencyKey])
+  @@index([walletId, createdAt])
+  @@map("wallet_top_ups")
+  @@schema("wallet_app")
+}
+
+model Merchant {
+  id              String           @id @default(uuid()) @db.Uuid
+  userId          String           @unique @map("user_id") @db.Uuid
+  name            String           @db.VarChar(150)
+  walletId        String           @unique @map("wallet_id") @db.Uuid
+  walletOwnerType WalletOwnerType  @default(MERCHANT) @map("wallet_owner_type")
+  isActive        Boolean          @default(true) @map("is_active")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  wallet          Wallet           @relation("MerchantWallet", fields: [walletId, walletOwnerType], references: [id, ownerType], onDelete: Restrict)
+  sessions        PaymentSession[]
+
+  @@unique([walletId, walletOwnerType])
+  @@index([isActive])
+  @@map("merchants")
+  @@schema("wallet_app")
+}
+
+model PaymentSession {
+  id           String               @id @default(uuid()) @db.Uuid
+  merchantId   String               @map("merchant_id") @db.Uuid
+  amount       Decimal              @db.Decimal(18, 2)
+  currency     Currency             @default(TRY)
+  status       PaymentSessionStatus @default(WAITING)
+  expiresAt    DateTime             @map("expires_at") @db.Timestamptz(3)
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+  merchant     Merchant             @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+  attempts     PaymentAttempt[]
+
+  @@index([merchantId, status, createdAt])
+  @@index([status, expiresAt])
+  @@map("payment_sessions")
+  @@schema("wallet_app")
+}
+
+model Transaction {
+  id               String              @id @default(uuid()) @db.Uuid
+  paymentSessionId String              @map("payment_session_id") @db.Uuid
+  fromWalletId     String              @map("from_wallet_id") @db.Uuid
+  toWalletId       String              @map("to_wallet_id") @db.Uuid
+  amount           Decimal             @db.Decimal(18, 2)
+  currency         Currency            @default(TRY)
+  paymentMethod    PaymentMethod       @map("payment_method")
+  status           TransactionStatus   @default(SUCCESS)
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  completedAt      DateTime            @default(now()) @map("completed_at") @db.Timestamptz(3)
+  paymentSession   PaymentSession      @relation(fields: [paymentSessionId], references: [id], onDelete: Restrict)
+  fromWallet       Wallet              @relation("TransactionFromWallet", fields: [fromWalletId], references: [id], onDelete: Restrict)
+  toWallet         Wallet              @relation("TransactionToWallet", fields: [toWalletId], references: [id], onDelete: Restrict)
+  attempts         PaymentAttempt[]
+  idempotency      IdempotencyRecord[]
+
+  @@index([fromWalletId, createdAt, id])
+  @@index([toWalletId, createdAt, id])
+  @@index([createdAt])
+  @@map("transactions")
+  @@schema("wallet_app")
+}
+
+model PaymentAttempt {
+  id               String               @id @default(uuid()) @db.Uuid
+  paymentSessionId String?              @map("payment_session_id") @db.Uuid
+  method           PaymentMethod
+  actorId          String               @map("actor_id") @db.Uuid
+  actorType        IdempotencyActorType @map("actor_type")
+  payerUserId      String?              @map("payer_user_id") @db.Uuid
+  status           AttemptStatus
+  failureCode      String?              @map("failure_code") @db.VarChar(100)
+  failureMessage   String?              @map("failure_message") @db.VarChar(500)
+  transactionId    String?              @map("transaction_id") @db.Uuid
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  paymentSession   PaymentSession?      @relation(fields: [paymentSessionId], references: [id], onDelete: Restrict)
+  transaction      Transaction?         @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  payerUser        User?                @relation("AttemptPayer", fields: [payerUserId], references: [id], onDelete: Restrict)
+
+  @@index([paymentSessionId, createdAt])
+  @@index([failureCode, createdAt])
+  @@map("payment_attempts")
+  @@schema("wallet_app")
+}
+
+model IdempotencyRecord {
+  id             String               @id @default(uuid()) @db.Uuid
+  actorId        String               @map("actor_id") @db.Uuid
+  actorType      IdempotencyActorType @map("actor_type")
+  endpoint       String               @db.VarChar(120)
+  idempotencyKey String               @map("idempotency_key") @db.Uuid
+  requestHash    String               @map("request_hash") @db.Char(64)
+  status         IdempotencyStatus    @default(PROCESSING)
+  responseStatus Int?                 @map("response_status")
+  responseBody   Json?                @map("response_body")
+  transactionId  String?              @map("transaction_id") @db.Uuid
+  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt      DateTime             @map("expires_at") @db.Timestamptz(3)
+  transaction    Transaction?         @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+
+  @@unique([actorType, actorId, endpoint, idempotencyKey])
+  @@index([expiresAt])
+  @@map("idempotency_records")
+  @@schema("wallet_app")
+}
+
+model RefreshSession {
+  id           String           @id @default(uuid()) @db.Uuid
+  userId       String           @map("user_id") @db.Uuid
+  familyId     String           @map("family_id") @db.Uuid
+  tokenHash    String           @unique @map("token_hash") @db.Char(64)
+  expiresAt    DateTime         @map("expires_at") @db.Timestamptz(3)
+  revokedAt    DateTime?        @map("revoked_at") @db.Timestamptz(3)
+  replacedById String?          @map("replaced_by_id") @db.Uuid
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  replacedBy   RefreshSession?  @relation("RefreshRotation", fields: [replacedById], references: [id], onDelete: Restrict)
+  replaces     RefreshSession[] @relation("RefreshRotation")
+
+  @@index([userId, familyId])
+  @@index([expiresAt])
+  @@map("refresh_sessions")
+  @@schema("wallet_app")
+}
+
+model WalletAdjustment {
+  id             String         @id @default(uuid()) @db.Uuid
+  walletId       String         @map("wallet_id") @db.Uuid
+  amount         Decimal        @db.Decimal(18, 2)
+  type           AdjustmentType @default(DEPOSIT)
+  reason         String         @db.VarChar(250)
+  adminUserId    String         @map("admin_user_id") @db.Uuid
+  idempotencyKey String         @map("idempotency_key") @db.Uuid
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  wallet         Wallet         @relation(fields: [walletId], references: [id], onDelete: Restrict)
+  admin          User           @relation("AdjustmentAdmin", fields: [adminUserId], references: [id], onDelete: Restrict)
+
+  @@unique([adminUserId, idempotencyKey])
+  @@index([walletId, createdAt])
+  @@map("wallet_adjustments")
+  @@schema("wallet_app")
+}

@@ -1,0 +1,31 @@
+{
+  "name": "hepantalya-wallet",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=24.18.0 <25",
+    "pnpm": "11.9.0"
+  },
+  "scripts": {
+    "build": "pnpm --recursive --if-present build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "pnpm --recursive --if-present lint",
+    "typecheck": "pnpm --recursive --if-present typecheck",
+    "test": "pnpm --recursive --if-present test",
+    "test:unit": "pnpm --filter @hepantalya/backend test:unit && pnpm --filter @hepantalya/mobile test",
+    "test:integration": "pnpm --filter @hepantalya/backend test:integration",
+    "test:concurrency": "pnpm --filter @hepantalya/backend test:concurrency",
+    "prisma:validate": "pnpm --filter @hepantalya/backend prisma:validate",
+    "prisma:generate": "pnpm --filter @hepantalya/backend prisma:generate",
+    "prisma:migrate:status": "pnpm --filter @hepantalya/backend prisma:migrate:status",
+    "mobile:doctor": "pnpm --filter @hepantalya/mobile doctor",
+    "mobile:test": "pnpm --filter @hepantalya/mobile test",
+    "mobile:export": "pnpm --filter @hepantalya/mobile export"
+  },
+  "devDependencies": {
+    "npm": "12.0.1",
+    "prettier": "3.6.2"
+  }
+}

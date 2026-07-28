@@ -1,0 +1,15 @@
+node_modules/
+.pnpm-store/
+.env
+.env.*
+!.env.example
+dist/
+coverage/
+.expo/
+.expo-shared/
+android/
+ios/
+*.log
+work/
+outputs/
+backend/src/generated/
