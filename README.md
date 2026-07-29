@@ -11,11 +11,11 @@ Mobil uygulama React Native Expo Development Build kullanır ve finans tablolar�
 
 - Public API: `https://http--hepantalya-api--wxsy4676lspg.code.run/api`
 - Health: `https://http--hepantalya-api--wxsy4676lspg.code.run/api/health`
-- Container: `ghcr.io/egee145/hepantalya-wallet-api:1.2.1`
+- Container: `ghcr.io/egee145/hepantalya-wallet-api:1.2.2`
 - Android release:
-  [HepAntalya-v1.2.1-production.apk](https://github.com/egee145/hepantalya-wallet/releases/download/v1.2.1/HepAntalya-v1.2.1-production.apk)
+  [HepAntalya-v1.2.2-production.apk](https://github.com/egee145/hepantalya-wallet/releases/download/v1.2.2/HepAntalya-v1.2.2-production.apk)
 - APK SHA-256:
-  `C12DCA032BDF3FE5624EAD8315B6D9E3FC74F73ADC6A3E72FB9AB9526EC169A5`
+  `6FA38F3AD310CF7FA6AD73012B5DF7489134192BDB87C9ACED4B866CC4657F06`
 
 Production APK public HTTPS API ve Supabase PostgreSQL ile çalışır. Uygulamayı kuran kullanıcı için
 Node.js, Docker, ADB reverse, aynı Wi-Fi ağı veya geliştirici bilgisayarı gerekmez. Android güvenlik
@@ -28,6 +28,7 @@ fiziksel Android cihaz gerektirir.
 - Tek uygulamada **Bireysel** ve **Kurumsal** hesap oluşturma/giriş akışları
 - Modern, erişilebilir ve role göre özelleşen mobil arayüz
 - Bireysel cüzdan bakiyesi, işlem geçmişi ve anlık bakiye yenileme
+- Soğuk açılışta proaktif token yenileme ve birbirini beklemeyen bakiye/kart/geçmiş yüklemeleri
 - Kullanıcı onayıyla fiziksel NFC kartını hesaba tanımlama veya başka hesaptan devralma
 - Kart devrinde eski sahibine kalıcı uygulama içi uyarı ve cihaz push bildirimi
 - Uygulama kapalıyken NFC kart ödemesi için tutarlı push bildirimi; dokununca işlem geçmişini açma
@@ -325,10 +326,10 @@ pnpm test:concurrency
 ```
 
 Test harness development/production database'i üzerinde yanlışlıkla işlem yapmamak için database
-adında `test` sözcüğünü zorunlu tutar. Mevcut suite 82 test içerir:
+adında `test` sözcüğünü zorunlu tutar. Mevcut suite 86 test içerir:
 
 - 20 backend unit
-- 43 mobile unit/service
+- 47 mobile unit/service
 - 13 gerçek PostgreSQL integration
 - 6 gerçek paralel HTTP concurrency
 
@@ -340,6 +341,7 @@ Local cihaz için release bundle:
 $env:EXPO_PUBLIC_APP_ENV='preview'
 $env:EXPO_PUBLIC_API_BASE_URL='http://127.0.0.1:3000/api'
 $env:EXPO_PUBLIC_WS_BASE_URL='http://127.0.0.1:3000/payments'
+$env:NODE_ENV='production'
 pnpm --filter @hepantalya/mobile exec expo prebuild --clean --platform android --no-install
 Set-Location mobile/android
 ./gradlew.bat assembleRelease `

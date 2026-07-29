@@ -79,12 +79,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'card.action': 'Kartı hesabıma tanımla',
     'card.replace': 'Kartı değiştir',
     'card.hold': 'Telefonun arkasına NFC kartınızı yaklaştırın.',
-    'card.inspectHold': 'Kart sahipliği kontrol ediliyor. NFC kartı telefonun arkasına tutun.',
     'card.holdAgain': 'Devir için aynı NFC kartı yeniden telefonun arkasına tutun.',
-    'card.confirmTitle': 'Kartı kontrol edip hesabınıza tanımlayalım mı?',
+    'card.confirmTitle': 'Kart hesabınıza tanımlansın mı?',
     'card.confirmBody':
-      'Kart önce yalnız okunarak mevcut sahipliği kontrol edilir. Yazma işleminden önce gerekirse ayrıca devir onayınız istenir.',
-    'card.confirmAction': 'Kartı kontrol et',
+      'Kart önce yalnızca okunur. Yazılabilir ve uygun bir kartsa NFC içeriği yalnızca hesap ID’niz olacak şekilde güvenle güncellenir.',
+    'card.confirmAction': 'Kartı tanımla',
     'card.transferConfirmTitle': 'Bu kart başka bir hesaba ait',
     'card.transferConfirmBody':
       'Bu kartı kendi üzerinize tanımlamak istediğinize emin misiniz? Karttaki hesap kimliği sizin kimliğinizle değiştirilecek; sizin ve önceki sahibin bakiyesi değişmeyecektir.',
@@ -270,12 +269,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'card.action': 'Link card to my account',
     'card.replace': 'Replace card',
     'card.hold': 'Hold your NFC card against the back of the phone.',
-    'card.inspectHold': 'Checking card ownership. Hold the NFC card against the phone.',
     'card.holdAgain': 'Hold the same NFC card against the phone again to complete the transfer.',
-    'card.confirmTitle': 'Check and link this card to your account?',
+    'card.confirmTitle': 'Link this card to your account?',
     'card.confirmBody':
-      'The card is read first to check its current ownership. If a transfer is needed, you will be asked for separate confirmation before writing.',
-    'card.confirmAction': 'Check card',
+      'The card is read first. If it is compatible and writable, its NFC content is securely updated to contain only your account ID.',
+    'card.confirmAction': 'Link card',
     'card.transferConfirmTitle': 'This card belongs to another account',
     'card.transferConfirmBody':
       'Are you sure you want to link this card to your account? Its account identity will be replaced with yours; neither your balance nor the previous owner’s balance will change.',

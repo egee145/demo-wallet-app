@@ -24,16 +24,19 @@ export function UserHomeScreen({
   const [error, setError] = useState('');
 
   const refresh = useCallback(async () => {
-    try {
-      const [walletResponse, cardResponse] = await Promise.all([
-        api.get<WalletSummary>('/wallet/me'),
-        api.get<NfcCardSummary>('/wallet/card'),
-      ]);
-      setWallet(walletResponse.data);
-      setCard(cardResponse.data);
+    setError('');
+    const walletRequest = api
+      .get<WalletSummary>('/wallet/me')
+      .then((response) => setWallet(response.data));
+    const cardRequest = api
+      .get<NfcCardSummary>('/wallet/card')
+      .then((response) => setCard(response.data));
+    const results = await Promise.allSettled([walletRequest, cardRequest]);
+    const failure = results.find((result) => result.status === 'rejected');
+    if (failure?.status === 'rejected') {
+      setError(localizedApiError(failure.reason, t));
+    } else {
       setError('');
-    } catch (caught) {
-      setError(localizedApiError(caught, t));
     }
   }, [t]);
 

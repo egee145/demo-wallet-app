@@ -51,17 +51,29 @@ function HistoryScreen({
   const load = useCallback(
     async (next?: string) => {
       setLoading(true);
+      setError('');
       try {
-        const response = await api.get<HistoryPage>(endpoint, {
-          params: { limit: 20, ...(next ? { cursor: next } : {}) },
-        });
-        setItems((current) => (next ? [...current, ...response.data.items] : response.data.items));
-        setCursor(response.data.nextCursor);
-        if (includeTopUps && !next) {
-          const topUpResponse = await api.get<{ items: TopUpItem[] }>('/wallet/top-ups');
-          setTopUps(topUpResponse.data.items);
+        const historyRequest = api
+          .get<HistoryPage>(endpoint, {
+            params: { limit: 20, ...(next ? { cursor: next } : {}) },
+          })
+          .then((response) => {
+            setItems((current) =>
+              next ? [...current, ...response.data.items] : response.data.items,
+            );
+            setCursor(response.data.nextCursor);
+          });
+        const topUpRequest =
+          includeTopUps && !next
+            ? api
+                .get<{ items: TopUpItem[] }>('/wallet/top-ups')
+                .then((response) => setTopUps(response.data.items))
+            : Promise.resolve();
+        const results = await Promise.allSettled([historyRequest, topUpRequest]);
+        const failure = results.find((result) => result.status === 'rejected');
+        if (failure?.status === 'rejected') {
+          throw failure.reason;
         }
-        setError('');
       } catch (caught) {
         setError(localizedApiError(caught, t));
       } finally {

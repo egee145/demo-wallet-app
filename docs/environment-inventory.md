@@ -1,6 +1,6 @@
 # Verification Report
 
-Son doğrulama: 2026-07-29, Windows 11 x64, Europe/Istanbul.
+Son doğrulama: 2026-07-30, Windows 11 x64, Europe/Istanbul.
 
 ## Araç zinciri
 
@@ -32,7 +32,7 @@ eklenmez.
 - Database: Supabase PostgreSQL, `wallet_app` şeması
 - Runtime database rolü: least-privilege `wallet_backend`
 - Backend container:
-  `ghcr.io/egee145/hepantalya-wallet-api:1.2.1`
+  `ghcr.io/egee145/hepantalya-wallet-api:1.2.2`
 - Northflank container planı: `nf-compute-20`, tek instance
 
 Public health kontrolü HTTP 200, `database: up`, geçerli TLS, HSTS, Helmet güvenlik
@@ -49,10 +49,10 @@ bağımlılığı olmadan bu public endpoint'leri kullanır.
 - Üç migration boş PostgreSQL 17 test database'ine uygulanıyor.
 - Aynı üç migration Supabase production projesinde uygulanmış ve migration status günceldir.
 - Backend unit: **20/20**.
-- Mobile unit/service: **43/43**.
+- Mobile unit/service: **47/47**.
 - PostgreSQL integration: **13/13**.
 - Gerçek paralel HTTP concurrency: **6/6**.
-- Toplam otomatik test: **82/82**.
+- Toplam otomatik test: **86/86**.
 - NestJS production build ve Expo Android export başarılı.
 - Expo Doctor: **20/20**.
 - Exact Node 24.18.0 multi-stage Docker image temiz build edildi.
@@ -67,13 +67,13 @@ sonucu doğrulanır.
 
 | Alan             | Değer                                                                                             |
 | ---------------- | ------------------------------------------------------------------------------------------------- |
-| Dosya            | `HepAntalya-v1.2.1-production.apk`                                                                |
+| Dosya            | `HepAntalya-v1.2.2-production.apk`                                                                |
 | Package          | `com.hepantalya.wallet`                                                                           |
-| Version          | `1.2.1` / code `4`                                                                                |
+| Version          | `1.2.2` / code `5`                                                                                |
 | Min / target SDK | 24 / 36                                                                                           |
 | ABI              | `arm64-v8a`                                                                                       |
-| Boyut            | 37,410,434 byte                                                                                   |
-| SHA-256          | `C12DCA032BDF3FE5624EAD8315B6D9E3FC74F73ADC6A3E72FB9AB9526EC169A5`                                |
+| Boyut            | 37,412,022 byte                                                                                   |
+| SHA-256          | `6FA38F3AD310CF7FA6AD73012B5DF7489134192BDB87C9ACED4B866CC4657F06`                                |
 | Signing          | APK Signature Scheme v2, RSA 4096                                                                 |
 | Cert SHA-256     | `D4:B7:82:F3:ED:D0:06:71:CC:8D:EC:39:17:93:12:BE:28:65:5C:8D:F5:37:11:08:25:9A:3D:A0:1B:06:D3:D6` |
 
@@ -112,9 +112,14 @@ production imza sertifikası ve Firebase Android kaynakları APK üzerinde doğr
   cihazına push geldi; bildirime dokunulan ilk soğuk açılışta kalıcı uyarı hemen gösterildi,
   `NFC kartım` ekranına yönlendirme çalıştı ve `TAMAM` sonrasında backend `readAt` kaydı
   oluştu. Sonraki açılışta aynı uyarı tekrarlanmadı.
-- `1.2.1` APK fiziksel cihaza dosya SHA-256 eşitliği doğrulanarak Android PackageManager ile
+- `1.2.2` APK fiziksel cihaza dosya SHA-256 eşitliği doğrulanarak Android PackageManager ile
   kuruldu. ADB reverse bulunmadan cold start başarılı oldu, production oturumu/bakiye göründü
   ve Android logunda fatal crash oluşmadı.
+- Normal kart tanımlama onay metni fiziksel cihazda doğrulandı; kart devri onay metni
+  değiştirilmedi ve gereksiz ikinci “kart sahipliği kontrol ediliyor” satırı kaldırıldı.
+- Kullanılabilir bakiye kart isteğini beklemeden, işlem geçmişi ve demo yüklemeler birbirini
+  beklemeden görüntüleniyor. Süresi dolmak üzere olan access token tek-flight biçiminde
+  proaktif yenileniyor; cache veya doğruluk/güvenlik tavizi eklenmedi.
 
 Mevcut fiziksel kart yazılabilir olduğu için salt-okunur/yazılamaz kart yolu o kartı kalıcı
 olarak değiştirmeden fiziksel olarak tetiklenemez. Production kodu NDEF status sonucunu
