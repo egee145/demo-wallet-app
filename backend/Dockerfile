@@ -19,16 +19,22 @@ ARG DIRECT_URL=postgresql://postgres:postgres@localhost:5432/build_only
 ENV DIRECT_URL=$DIRECT_URL
 COPY backend backend
 RUN pnpm --filter @hepantalya/backend prisma:generate \
-  && pnpm --filter @hepantalya/backend build
+  && pnpm --filter @hepantalya/backend build \
+  && pnpm --filter @hepantalya/backend deploy --prod --legacy /prod/backend
 
 FROM node:24.18.0-bookworm-slim AS runtime
+ARG APP_VERSION=development
 ENV NODE_ENV=production
+LABEL org.opencontainers.image.title="HepAntalya Wallet API" \
+  org.opencontainers.image.description="NestJS API for HepAntalya Wallet and NFC payments" \
+  org.opencontainers.image.source="https://github.com/egee145/hepantalya-wallet" \
+  org.opencontainers.image.version="${APP_VERSION}"
 WORKDIR /app/backend
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates openssl \
   && rm -rf /var/lib/apt/lists/*
-COPY --from=dependencies /app/node_modules ./node_modules
-COPY --from=build /app/backend/package.json ./package.json
+COPY --from=build /prod/backend/node_modules ./node_modules
+COPY --from=build /prod/backend/package.json ./package.json
 COPY --from=build /app/backend/dist ./dist
 COPY --from=build /app/backend/certs ./certs
 USER node

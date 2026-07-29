@@ -15,6 +15,11 @@ import type { MerchantStackParams } from '../../navigation/types';
 import { api, apiErrorCode } from '../../services/api/api-client';
 import { subscribeToPaymentSession } from '../../services/api/payment-socket';
 import { getNfcReader, type NfcReadResult } from '../../services/nfc';
+import {
+  getNfcErrorCode,
+  localizedNfcError,
+  type NfcErrorCode,
+} from '../../services/nfc/nfc-error';
 import { idempotencyStore } from '../../services/storage/idempotency-store';
 import { colors, radius, spacing } from '../../theme';
 
@@ -98,6 +103,7 @@ export function MerchantPaymentSessionScreen({
   const [seconds, setSeconds] = useState(() =>
     Math.max(0, Math.ceil((Date.parse(session.expiresAt) - Date.now()) / 1000)),
   );
+  const [nfcErrorCode, setNfcErrorCode] = useState<NfcErrorCode>();
   const active = useRef(true);
   const submitting = useRef(false);
   const settled = useRef(false);
@@ -211,6 +217,7 @@ export function MerchantPaymentSessionScreen({
       return;
     }
     try {
+      setNfcErrorCode(undefined);
       dispatch({ type: 'WAIT' });
       const result = await getNfcReader().readUserId();
       if (active.current) {
@@ -219,7 +226,12 @@ export function MerchantPaymentSessionScreen({
       }
     } catch (caught) {
       if (active.current && caught instanceof Error && caught.message !== 'NFC_CANCELLED') {
-        dispatch({ type: 'RECOVERABLE_ERROR', message: localizedApiError(caught, t) });
+        const code = getNfcErrorCode(caught);
+        setNfcErrorCode(code);
+        dispatch({
+          type: 'RECOVERABLE_ERROR',
+          message: code ? localizedNfcError(caught, t) : localizedApiError(caught, t),
+        });
       }
     }
   }, [session.expiresAt, submitCard, t]);
@@ -268,6 +280,16 @@ export function MerchantPaymentSessionScreen({
     navigation.popToTop();
   };
 
+  const openNfcSettings = async () => {
+    const opened = await getNfcReader().openNfcSettings();
+    if (!opened) {
+      dispatch({
+        type: 'RECOVERABLE_ERROR',
+        message: t('errors.NFC_SETTINGS_UNAVAILABLE'),
+      });
+    }
+  };
+
   const statusTone =
     state.status === 'PAID'
       ? 'success'
@@ -303,6 +325,11 @@ export function MerchantPaymentSessionScreen({
         </View>
         <Pill tone={statusTone}>{t(`payment.status.${state.status}`)}</Pill>
         {'message' in state ? <InfoBanner tone="warning">{state.message}</InfoBanner> : null}
+        {nfcErrorCode === 'NFC_DISABLED' ? (
+          <Button icon="settings-outline" onPress={() => void openNfcSettings()} tone="secondary">
+            {t('nfc.openSettings')}
+          </Button>
+        ) : null}
         {state.status === 'RECOVERABLE_ERROR' || state.status === 'NETWORK_UNKNOWN' ? (
           <Button icon="refresh" onPress={() => void listen()} tone="secondary">
             {t('payment.retryReader')}

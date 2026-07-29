@@ -6,8 +6,10 @@ import NfcManager, {
   NfcTech,
   type TagEvent,
 } from 'react-native-nfc-manager';
+import { Platform } from 'react-native';
 
 import { decodeStrictUserId, normalizeCanonicalUserId } from './ndef-text.parser';
+import { isNfcCancellation } from './nfc-error';
 import type {
   NfcAvailability,
   NfcDiagnosticsRecord,
@@ -165,12 +167,25 @@ export class RealNfcReaderAdapter implements NfcReaderPort {
     await this.cancel();
 
     try {
-      await NfcManager.requestTechnology(NfcTech.Ndef, {
-        isReaderModeEnabled: true,
-        readerModeFlags: NFC_READER_MODE_FLAGS,
-      });
+      try {
+        await NfcManager.requestTechnology(NfcTech.Ndef, {
+          isReaderModeEnabled: true,
+          readerModeFlags: NFC_READER_MODE_FLAGS,
+        });
+      } catch (error) {
+        if (isNfcCancellation(error)) {
+          throw new Error('NFC_CANCELLED');
+        }
+        throw new Error('NFC_TAG_NOT_WRITABLE');
+      }
       const tag = await NfcManager.getTag();
-      const { status, capacity } = await NfcManager.ndefHandler.getNdefStatus();
+      let status: NdefStatus;
+      let capacity: number;
+      try {
+        ({ status, capacity } = await NfcManager.ndefHandler.getNdefStatus());
+      } catch {
+        throw new Error('NFC_TAG_NOT_WRITABLE');
+      }
       if (status !== NdefStatus.ReadWrite) {
         throw new Error(
           status === NdefStatus.ReadOnly ? 'NFC_TAG_READ_ONLY' : 'NFC_TAG_NOT_WRITABLE',
@@ -180,7 +195,14 @@ export class RealNfcReaderAdapter implements NfcReaderPort {
         throw new Error('NFC_TAG_CAPACITY_EXCEEDED');
       }
 
-      await NfcManager.ndefHandler.writeNdefMessage(message, { reconnectAfterWrite: true });
+      try {
+        await NfcManager.ndefHandler.writeNdefMessage(message, { reconnectAfterWrite: true });
+      } catch (error) {
+        if (isNfcCancellation(error)) {
+          throw new Error('NFC_CANCELLED');
+        }
+        throw new Error('NFC_WRITE_FAILED');
+      }
       const verificationTag = await NfcManager.ndefHandler.getNdefMessage();
       const verificationRecords = (verificationTag?.ndefMessage ?? []).map(mapRecord);
       let verified = false;
@@ -199,6 +221,17 @@ export class RealNfcReaderAdapter implements NfcReaderPort {
       };
     } finally {
       await this.cancel();
+    }
+  }
+
+  async openNfcSettings(): Promise<boolean> {
+    if (Platform.OS !== 'android') {
+      return false;
+    }
+    try {
+      return await NfcManager.goToNfcSetting();
+    } catch {
+      return false;
     }
   }
 

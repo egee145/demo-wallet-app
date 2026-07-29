@@ -43,5 +43,6 @@ export interface NfcReaderPort {
   readDiagnostics(): Promise<NfcDiagnosticsResult>;
   readUserId(): Promise<NfcReadResult>;
   provisionUserId(userId: string): Promise<NfcProvisionResult>;
+  openNfcSettings(): Promise<boolean>;
   cancel(): Promise<void>;
 }

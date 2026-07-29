@@ -9,6 +9,11 @@ import { useI18n } from '../../i18n/i18n-context';
 import { api } from '../../services/api/api-client';
 import { useAuth } from '../../services/auth/auth-context';
 import { getNfcReader } from '../../services/nfc';
+import {
+  getNfcErrorCode,
+  localizedNfcError,
+  type NfcErrorCode,
+} from '../../services/nfc/nfc-error';
 import { colors, radius, spacing } from '../../theme';
 
 export function CardManagementScreen() {
@@ -18,6 +23,7 @@ export function CardManagementScreen() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [working, setWorking] = useState(false);
+  const [nfcErrorCode, setNfcErrorCode] = useState<NfcErrorCode>();
 
   const load = useCallback(async () => {
     try {
@@ -42,6 +48,7 @@ export function CardManagementScreen() {
     }
     setWorking(true);
     setError('');
+    setNfcErrorCode(undefined);
     setMessage(t('card.hold'));
     try {
       const provisioned = await getNfcReader().provisionUserId(user.id);
@@ -56,11 +63,9 @@ export function CardManagementScreen() {
       setMessage(t('card.success'));
     } catch (caught) {
       setMessage('');
-      setError(
-        caught instanceof Error && caught.message.startsWith('NFC_')
-          ? caught.message
-          : localizedApiError(caught, t),
-      );
+      const code = getNfcErrorCode(caught);
+      setNfcErrorCode(code);
+      setError(code ? localizedNfcError(caught, t) : localizedApiError(caught, t));
     } finally {
       setWorking(false);
       await getNfcReader().cancel();
@@ -72,6 +77,13 @@ export function CardManagementScreen() {
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('card.confirmAction'), onPress: () => void bind() },
     ]);
+  };
+
+  const openNfcSettings = async () => {
+    const opened = await getNfcReader().openNfcSettings();
+    if (!opened) {
+      setError(t('errors.NFC_SETTINGS_UNAVAILABLE'));
+    }
   };
 
   return (
@@ -104,6 +116,11 @@ export function CardManagementScreen() {
       {working ? <InfoBanner>{t('card.hold')}</InfoBanner> : null}
       {message ? <InfoBanner tone="success">{message}</InfoBanner> : null}
       {error ? <InfoBanner tone="warning">{error}</InfoBanner> : null}
+      {nfcErrorCode === 'NFC_DISABLED' ? (
+        <Button icon="settings-outline" onPress={() => void openNfcSettings()} tone="secondary">
+          {t('nfc.openSettings')}
+        </Button>
+      ) : null}
       <Button disabled={working} icon="wifi-outline" onPress={confirm}>
         {t(summary?.bound ? 'card.replace' : 'card.action')}
       </Button>

@@ -110,6 +110,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'payment.scanSubtitle': 'Kodu çerçevenin içinde tutun.',
     'payment.cameraPermission': 'QR ödemesi için kamera izni gereklidir.',
     'payment.requestPermission': 'Kamera izni ver',
+    'payment.cameraSettings':
+      'Kamera izni kapatılmış. QR okutmak için uygulama ayarlarından kamera iznini açın.',
+    'payment.openAppSettings': 'Uygulama ayarlarını aç',
+    'nfc.openSettings': 'NFC ayarlarını aç',
     'payment.confirmTitle': 'Ödemeyi onayla',
     'payment.merchant': 'İşletme',
     'payment.expires': 'Son geçerlilik',
@@ -141,6 +145,21 @@ export const translations: Record<Language, Record<string, string>> = {
     'errors.USER_ALREADY_EXISTS': 'Bu e-posta veya telefon zaten kullanılıyor.',
     'errors.NFC_CARD_ALREADY_BOUND': 'Bu NFC kart başka bir hesaba tanımlı.',
     'errors.NFC_CARD_NOT_REGISTERED': 'NFC kart kullanıcı hesabına tanımlı değil.',
+    'errors.NFC_NOT_SUPPORTED': 'Bu cihaz NFC özelliğini desteklemiyor.',
+    'errors.NFC_DISABLED':
+      'NFC özelliğiniz kapalı. Kart okutmak için NFC’yi açın veya NFC ayarlarına gidin.',
+    'errors.NFC_TAG_READ_ONLY':
+      'Okutulan NFC kart salt okunur durumda; bu karta hesap bilgisi yazılamaz.',
+    'errors.NFC_TAG_NOT_WRITABLE':
+      'Okutulan kart yazılabilir bir NDEF/NFC kart değil. Lütfen yazılabilir başka bir kart kullanın.',
+    'errors.NFC_TAG_CAPACITY_EXCEEDED': 'NFC kartın boş alanı hesap kimliği için yetersiz.',
+    'errors.NFC_CARD_VERIFICATION_FAILED':
+      'Kart yazıldı ancak güvenli doğrulama tamamlanamadı. Kart hesabınıza bağlanmadı.',
+    'errors.NFC_WRITE_FAILED': 'NFC karta yazma tamamlanamadı. Kartı sabit tutup tekrar deneyin.',
+    'errors.NFC_SETTINGS_UNAVAILABLE':
+      'NFC ayarları otomatik açılamadı. Telefon ayarlarından NFC’yi açın.',
+    'errors.CAMERA_PERMISSION_FAILED':
+      'Kamera izni istenemedi. Uygulama ayarlarından kamera iznini açın.',
     'errors.INVALID_QR_PAYLOAD': 'QR kodu geçerli bir ödeme oturumu içermiyor.',
     'errors.INSUFFICIENT_BALANCE': 'Cüzdan bakiyesi yetersiz.',
     'errors.PAYMENT_SESSION_EXPIRED': 'Ödeme oturumunun süresi doldu.',
@@ -262,6 +281,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'payment.scanSubtitle': 'Keep the code inside the frame.',
     'payment.cameraPermission': 'Camera access is required for QR payments.',
     'payment.requestPermission': 'Allow camera access',
+    'payment.cameraSettings':
+      'Camera access is disabled. Enable the camera permission in app settings to scan QR codes.',
+    'payment.openAppSettings': 'Open app settings',
+    'nfc.openSettings': 'Open NFC settings',
     'payment.confirmTitle': 'Confirm payment',
     'payment.merchant': 'Merchant',
     'payment.expires': 'Expires',
@@ -292,6 +315,23 @@ export const translations: Record<Language, Record<string, string>> = {
     'errors.USER_ALREADY_EXISTS': 'This email or phone is already in use.',
     'errors.NFC_CARD_ALREADY_BOUND': 'This NFC card is linked to another account.',
     'errors.NFC_CARD_NOT_REGISTERED': 'The NFC card is not linked to this user.',
+    'errors.NFC_NOT_SUPPORTED': 'This device does not support NFC.',
+    'errors.NFC_DISABLED':
+      'NFC is turned off. Turn on NFC or open NFC settings before tapping a card.',
+    'errors.NFC_TAG_READ_ONLY':
+      'The NFC card is read-only, so account information cannot be written to it.',
+    'errors.NFC_TAG_NOT_WRITABLE':
+      'The scanned card is not a writable NDEF/NFC card. Use another writable card.',
+    'errors.NFC_TAG_CAPACITY_EXCEEDED':
+      'The NFC card does not have enough free space for the account identity.',
+    'errors.NFC_CARD_VERIFICATION_FAILED':
+      'The card was written but could not be verified, so it was not linked to your account.',
+    'errors.NFC_WRITE_FAILED':
+      'Writing to the NFC card did not complete. Hold the card steady and try again.',
+    'errors.NFC_SETTINGS_UNAVAILABLE':
+      'NFC settings could not be opened automatically. Turn on NFC in system settings.',
+    'errors.CAMERA_PERMISSION_FAILED':
+      'Camera permission could not be requested. Enable it in app settings.',
     'errors.INVALID_QR_PAYLOAD': 'The QR code does not contain a valid payment session.',
     'errors.INSUFFICIENT_BALANCE': 'The wallet balance is insufficient.',
     'errors.PAYMENT_SESSION_EXPIRED': 'The payment session has expired.',
