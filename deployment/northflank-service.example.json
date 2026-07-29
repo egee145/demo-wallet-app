@@ -1,0 +1,66 @@
+{
+  "name": "HepAntalya API",
+  "description": "Production NestJS API for HepAntalya Wallet and NFC payments",
+  "billing": {
+    "deploymentPlan": "nf-compute-20"
+  },
+  "deployment": {
+    "instances": 1,
+    "docker": {
+      "configType": "default"
+    },
+    "storage": {
+      "ephemeralStorage": {
+        "storageSize": 1024
+      }
+    },
+    "external": {
+      "imagePath": "ghcr.io/egee145/hepantalya-wallet-api@sha256:f5daa78fbde6bb5cdfb95c1a7b831855b53e66fd2015ecc4626a707d8522c8da"
+    }
+  },
+  "ports": [
+    {
+      "name": "http",
+      "internalPort": 3000,
+      "public": true,
+      "protocol": "HTTP"
+    }
+  ],
+  "runtimeEnvironment": {
+    "NODE_ENV": "production",
+    "PORT": "3000",
+    "DATABASE_URL": "<set-in-Northflank-secret-store>",
+    "DB_POOL_MAX": "5",
+    "JWT_ACCESS_SECRET": "<set-in-Northflank-secret-store>",
+    "ACCESS_TOKEN_TTL": "15m",
+    "REFRESH_TOKEN_TTL_DAYS": "30",
+    "CORS_ORIGINS": "https://ege07.com,https://www.ege07.com",
+    "LOG_LEVEL": "info",
+    "SESSION_TTL_SECONDS": "120",
+    "PAYMENT_MAX_AMOUNT": "999999.99",
+    "WALLET_MAX_BALANCE": "999999999999.99"
+  },
+  "healthChecks": [
+    {
+      "protocol": "HTTP",
+      "type": "readinessProbe",
+      "path": "/api/health",
+      "port": 3000,
+      "initialDelaySeconds": 15,
+      "periodSeconds": 30,
+      "timeoutSeconds": 5,
+      "failureThreshold": 3,
+      "successThreshold": 1
+    },
+    {
+      "protocol": "HTTP",
+      "type": "livenessProbe",
+      "path": "/api/health",
+      "port": 3000,
+      "initialDelaySeconds": 30,
+      "periodSeconds": 60,
+      "timeoutSeconds": 5,
+      "failureThreshold": 3
+    }
+  ]
+}

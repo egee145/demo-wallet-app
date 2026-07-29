@@ -1,0 +1,6 @@
+{
+  "name": "HepAntalya Production",
+  "description": "Production API for HepAntalya Wallet and NFC payments",
+  "color": "#0D9488",
+  "region": "europe-west"
+}

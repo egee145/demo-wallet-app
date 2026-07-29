@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -22,6 +22,19 @@ export function QrScannerScreen({
   const [permission, requestPermission] = useCameraPermissions();
   const [error, setError] = useState('');
   const latched = useRef(false);
+  const permissionRequested = useRef(false);
+
+  useEffect(() => {
+    if (
+      permission &&
+      !permission.granted &&
+      permission.canAskAgain &&
+      !permissionRequested.current
+    ) {
+      permissionRequested.current = true;
+      void requestPermission().catch(() => setError(t('errors.CAMERA_PERMISSION_FAILED')));
+    }
+  }, [permission, requestPermission, t]);
 
   const scan = ({ data }: BarcodeScanningResult) => {
     if (latched.current) {
@@ -51,10 +64,20 @@ export function QrScannerScreen({
           <Ionicons color={colors.tealDark} name="camera-outline" size={36} />
         </View>
         <Title>{t('payment.scanTitle')}</Title>
-        <Muted>{t('payment.cameraPermission')}</Muted>
-        <Button icon="camera-outline" onPress={() => void requestPermission()}>
-          {t('payment.requestPermission')}
+        <Muted>
+          {t(permission.canAskAgain ? 'payment.cameraPermission' : 'payment.cameraSettings')}
+        </Muted>
+        <Button
+          icon={permission.canAskAgain ? 'camera-outline' : 'settings-outline'}
+          onPress={() =>
+            void (permission.canAskAgain
+              ? requestPermission().catch(() => setError(t('errors.CAMERA_PERMISSION_FAILED')))
+              : Linking.openSettings())
+          }
+        >
+          {t(permission.canAskAgain ? 'payment.requestPermission' : 'payment.openAppSettings')}
         </Button>
+        {error ? <InfoBanner tone="warning">{error}</InfoBanner> : null}
       </Screen>
     );
   }

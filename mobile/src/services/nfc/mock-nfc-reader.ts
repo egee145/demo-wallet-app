@@ -48,5 +48,9 @@ export class MockNfcReaderAdapter implements NfcReaderPort {
     });
   }
 
+  openNfcSettings(): Promise<boolean> {
+    return Promise.resolve(true);
+  }
+
   async cancel(): Promise<void> {}
 }

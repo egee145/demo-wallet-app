@@ -32,6 +32,21 @@
       },
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_API_BASE_URL": "https://http--hepantalya-api--wxsy4676lspg.code.run/api",
+        "EXPO_PUBLIC_WS_BASE_URL": "https://http--hepantalya-api--wxsy4676lspg.code.run/payments",
+        "EXPO_PUBLIC_ENABLE_NFC_DIAGNOSTICS": "false",
+        "EXPO_PUBLIC_USE_MOCK_NFC": "false"
+      }
+    },
+    "production-apk": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_API_BASE_URL": "https://http--hepantalya-api--wxsy4676lspg.code.run/api",
+        "EXPO_PUBLIC_WS_BASE_URL": "https://http--hepantalya-api--wxsy4676lspg.code.run/payments",
         "EXPO_PUBLIC_ENABLE_NFC_DIAGNOSTICS": "false",
         "EXPO_PUBLIC_USE_MOCK_NFC": "false"
       }

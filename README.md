@@ -8,6 +8,19 @@ Backend NestJS ve Prisma ile geliştirilir, finansal source of truth Supabase Po
 Mobil uygulama React Native Expo Development Build kullanır ve finans tablolarına hiçbir
 zaman doğrudan yazmaz.
 
+## Production
+
+- Public API: `https://http--hepantalya-api--wxsy4676lspg.code.run/api`
+- Health: `https://http--hepantalya-api--wxsy4676lspg.code.run/api/health`
+- Container: `ghcr.io/egee145/hepantalya-wallet-api:1.1.0`
+- Android release:
+  [HepAntalya-v1.1.0-production.apk](https://github.com/egee145/hepantalya-wallet/releases/download/v1.1.0/HepAntalya-v1.1.0-production.apk)
+
+Production APK public HTTPS API ve Supabase PostgreSQL ile çalışır. Uygulamayı kuran kullanıcı için
+Node.js, Docker, ADB reverse, aynı Wi-Fi ağı veya geliştirici bilgisayarı gerekmez. Android güvenlik
+ayarı nedeniyle GitHub'dan indirilen APK'nın kurulmasına bir defaya mahsus izin verilmesi gerekebilir.
+NFC özelliği NFC destekli ve NFC'si açık fiziksel Android cihaz gerektirir.
+
 ## Öne çıkan özellikler
 
 - Tek uygulamada **Bireysel** ve **Kurumsal** hesap oluşturma/giriş akışları
@@ -138,6 +151,12 @@ pnpm --filter @hepantalya/mobile android
 
 Expo Go native NFC modülünü içermez; Development Build kullanılmalıdır. Android Emulator
 gerçek fiziksel NFC kartı okuyamaz.
+
+Uygulama QR ekranı ilk açıldığında Android kamera iznini kendisi ister. İzin kalıcı olarak
+reddedilmişse uygulama ayarlarına yönlendirir. NFC kapalıysa ham native hata göstermek yerine
+NFC'nin kapalı olduğunu açıklar ve doğrudan Android NFC ayarlarını açan bir düğme sunar.
+Kart tanımlama sırasında okutulan tag salt okunur veya yazılabilir NDEF kart değilse kullanıcıya
+uygun ve anlaşılır uyarı gösterilir; kart silinmez, formatlanmaz veya read-only yapılmaz.
 
 ## Hesap akışları
 
@@ -279,10 +298,10 @@ pnpm test:concurrency
 ```
 
 Test harness development/production database'ini yanlışlıkla temizlememek için database
-adında `test` sözcüğünü zorunlu tutar. Mevcut suite 66 test içerir:
+adında `test` sözcüğünü zorunlu tutar. Mevcut suite 70 test içerir:
 
 - 17 backend unit
-- 31 mobile unit/service
+- 35 mobile unit/service
 - 12 gerçek PostgreSQL integration
 - 6 gerçek paralel HTTP concurrency
 

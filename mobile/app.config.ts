@@ -18,7 +18,7 @@ if (isProduction && (!apiBaseUrl?.startsWith('https://') || !wsBaseUrl?.startsWi
 const config: ExpoConfig = {
   name: 'HepAntalya',
   slug: 'hepantalya-wallet',
-  version: '1.0.0',
+  version: '1.1.0',
   orientation: 'portrait',
   userInterfaceStyle: 'light',
   newArchEnabled: true,
@@ -46,7 +46,7 @@ const config: ExpoConfig = {
   ],
   android: {
     package: 'com.hepantalya.wallet',
-    versionCode: 1,
+    versionCode: 2,
     permissions: ['android.permission.NFC', 'android.permission.CAMERA'],
     adaptiveIcon: {
       foregroundImage: './assets/hepantalya-icon.png',
