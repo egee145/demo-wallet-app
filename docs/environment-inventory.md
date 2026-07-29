@@ -32,7 +32,7 @@ eklenmez.
 - Database: Supabase PostgreSQL, `wallet_app` şeması
 - Runtime database rolü: least-privilege `wallet_backend`
 - Backend container:
-  `ghcr.io/egee145/hepantalya-wallet-api:1.1.0`
+  `ghcr.io/egee145/hepantalya-wallet-api:1.2.0`
 - Northflank container planı: `nf-compute-20`, tek instance
 
 Public health kontrolü HTTP 200, `database: up`, geçerli TLS, HSTS, Helmet güvenlik
@@ -46,13 +46,13 @@ bağımlılığı olmadan bu public endpoint'leri kullanır.
 - Frozen dependency install başarılı.
 - Format check, ESLint ve TypeScript typecheck başarılı.
 - Prisma validate/generate başarılı.
-- İki migration boş PostgreSQL 17 test database'ine uygulanıyor.
-- Aynı iki migration Supabase production projesinde uygulanmış ve migration status günceldir.
-- Backend unit: **17/17**.
-- Mobile unit/service: **35/35**.
-- PostgreSQL integration: **12/12**.
+- Üç migration boş PostgreSQL 17 test database'ine uygulanıyor.
+- Aynı üç migration Supabase production projesinde uygulanmış ve migration status günceldir.
+- Backend unit: **20/20**.
+- Mobile unit/service: **41/41**.
+- PostgreSQL integration: **13/13**.
 - Gerçek paralel HTTP concurrency: **6/6**.
-- Toplam otomatik test: **70/70**.
+- Toplam otomatik test: **80/80**.
 - NestJS production build ve Expo Android export başarılı.
 - Expo Doctor: **20/20**.
 - Exact Node 24.18.0 multi-stage Docker image temiz build edildi.
@@ -67,19 +67,19 @@ sonucu doğrulanır.
 
 | Alan             | Değer                                                                                             |
 | ---------------- | ------------------------------------------------------------------------------------------------- |
-| Dosya            | `HepAntalya-v1.1.0-production.apk`                                                                |
+| Dosya            | `HepAntalya-v1.2.0-production.apk`                                                                |
 | Package          | `com.hepantalya.wallet`                                                                           |
-| Version          | `1.1.0` / code `2`                                                                                |
+| Version          | `1.2.0` / code `3`                                                                                |
 | Min / target SDK | 24 / 36                                                                                           |
-| Boyut            | 112,498,348 byte                                                                                  |
-| SHA-256          | `A6FDC2D47C42CDF1A80E4BB4E43A541B66250926D7C6DEBE3D698230D6FBEB3F`                                |
+| Boyut            | 44,919,337 byte                                                                                   |
+| SHA-256          | `CE19D5027084883A53F07059AA321FCB2658D2F8DA7A712C48E29A2807BF1363`                                |
 | Signing          | APK Signature Scheme v2, RSA 4096                                                                 |
 | Cert SHA-256     | `D4:B7:82:F3:ED:D0:06:71:CC:8D:EC:39:17:93:12:BE:28:65:5C:8D:F5:37:11:08:25:9A:3D:A0:1B:06:D3:D6` |
 
-Manifest kamera, NFC ve internet izinlerini içerir; production manifest'inde
+Manifest kamera, NFC, bildirim ve internet izinlerini içerir; production manifest'inde
 `usesCleartextTraffic=false` değeridir. Bundle public production API/WS URL'sini içerir ve
-`localhost`, `127.0.0.1:3000` veya `10.0.2.2` endpoint'i içermez. Aynı APK fiziksel cihaza
-kurulmuş ve version code/name doğrulanmıştır.
+`localhost`, `127.0.0.1:3000` veya `10.0.2.2` endpoint'i içermez. Paket/version, gerçek
+production imza sertifikası ve Firebase Android kaynakları APK üzerinde doğrulanmıştır.
 
 ## Fiziksel Android kabulü
 

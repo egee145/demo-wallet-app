@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "865334170062",
+    "project_id": "hepantalya-wallet",
+    "storage_bucket": "hepantalya-wallet.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:865334170062:android:1aadd6de5f7540618d1b9f",
+        "android_client_info": {
+          "package_name": "com.hepantalya.wallet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1U0Io1KuyqWYo-_ahPczIrglhLLvZfxw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

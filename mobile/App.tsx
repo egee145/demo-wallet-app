@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigation } from './src/navigation/root-navigation';
 import { I18nProvider } from './src/i18n/i18n-context';
 import { AuthProvider } from './src/services/auth/auth-context';
+import { NotificationProvider } from './src/services/notifications/notification-context';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,8 +20,10 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <I18nProvider>
           <AuthProvider>
-            <StatusBar style="dark" />
-            <RootNavigation />
+            <NotificationProvider>
+              <StatusBar style="dark" />
+              <RootNavigation />
+            </NotificationProvider>
           </AuthProvider>
         </I18nProvider>
       </QueryClientProvider>

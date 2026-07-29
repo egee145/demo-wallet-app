@@ -18,6 +18,7 @@ import {
   type PreparedIdempotency,
 } from '../idempotency/idempotency.service.js';
 import { PaymentGateway } from '../gateway/payment.gateway.js';
+import { NotificationService } from '../../notification/notification.service.js';
 
 type Command = {
   method: PaymentMethod;
@@ -48,6 +49,7 @@ type Outcome =
       body: Record<string, unknown>;
       transactionId: string;
       replayed: boolean;
+      notificationId?: string;
     }
   | {
       kind: 'failure';
@@ -65,6 +67,7 @@ export class PaymentExecutionService {
     private readonly prisma: PrismaService,
     private readonly idempotency: IdempotencyService,
     private readonly gateway: PaymentGateway,
+    private readonly notifications: NotificationService,
   ) {}
 
   executeNfc(
@@ -111,6 +114,9 @@ export class PaymentExecutionService {
         }
         if (!outcome.replayed) {
           this.gateway.emitStatus(command.paymentSessionId, 'paid', outcome.transactionId);
+        }
+        if (outcome.notificationId) {
+          void this.notifications.deliver(outcome.notificationId);
         }
         return outcome.body;
       } catch (error) {
@@ -445,11 +451,16 @@ export class PaymentExecutionService {
           currency: 'TRY',
         };
         await this.idempotency.complete(tx, prepared.recordId, 200, body, transaction.id);
+        const notification =
+          command.method === PaymentMethod.NFC
+            ? await this.notifications.createNfcPayment(tx, payer.id, transaction.id, amount)
+            : undefined;
         return {
           kind: 'success',
           body,
           transactionId: transaction.id,
           replayed: false,
+          notificationId: notification?.id,
         };
       },
       {

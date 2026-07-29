@@ -16,6 +16,7 @@ import { WalletModule } from './wallet/wallet.module.js';
 import { MerchantModule } from './merchant/merchant.module.js';
 import { PaymentModule } from './payment/payment.module.js';
 import { TransactionModule } from './transaction/transaction.module.js';
+import { NotificationModule } from './notification/notification.module.js';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { TransactionModule } from './transaction/transaction.module.js';
     MerchantModule,
     PaymentModule,
     TransactionModule,
+    NotificationModule,
     HealthModule,
   ],
   providers: [

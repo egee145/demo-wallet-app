@@ -20,6 +20,8 @@ const schema = Joi.object({
   SESSION_TTL_SECONDS: Joi.number().integer().min(30).max(900).default(120),
   PAYMENT_MAX_AMOUNT: Joi.number().positive().default(999999.99),
   WALLET_MAX_BALANCE: Joi.number().positive().default(999999999999.99),
+  EXPO_PUSH_ENABLED: Joi.boolean().truthy('true').falsy('false').default(false),
+  EXPO_PUSH_ACCESS_TOKEN: Joi.string().min(20).optional(),
 }).unknown(true);
 
 export function validateEnvironment(config: Record<string, unknown>): Record<string, unknown> {

@@ -23,6 +23,14 @@ describe('NFC error mapping', () => {
     );
   });
 
+  it('maps a different second card to a safe transfer error', () => {
+    const translate = (key: string) =>
+      key === 'errors.NFC_CARD_CHANGED' ? 'Aynı kartı yeniden okutun.' : key;
+    expect(localizedNfcError(new Error('NFC_CARD_CHANGED'), translate)).toBe(
+      'Aynı kartı yeniden okutun.',
+    );
+  });
+
   it('does not expose unknown native error details', () => {
     expect(localizedNfcError(new Error('Native stack details'), t)).toBe(
       'Beklenmeyen bir hata oluştu.',

@@ -11,9 +11,9 @@ Mobil uygulama React Native Expo Development Build kullanır ve finans tablolar�
 
 - Public API: `https://http--hepantalya-api--wxsy4676lspg.code.run/api`
 - Health: `https://http--hepantalya-api--wxsy4676lspg.code.run/api/health`
-- Container: `ghcr.io/egee145/hepantalya-wallet-api:1.1.0`
+- Container: `ghcr.io/egee145/hepantalya-wallet-api:1.2.0`
 - Android release:
-  [HepAntalya-v1.1.0-production.apk](https://github.com/egee145/hepantalya-wallet/releases/download/v1.1.0/HepAntalya-v1.1.0-production.apk)
+  [HepAntalya-v1.2.0-production.apk](https://github.com/egee145/hepantalya-wallet/releases/download/v1.2.0/HepAntalya-v1.2.0-production.apk)
 
 Production APK public HTTPS API ve Supabase PostgreSQL ile çalışır. Uygulamayı kuran kullanıcı için
 Node.js, Docker, ADB reverse, aynı Wi-Fi ağı veya geliştirici bilgisayarı gerekmez. Android güvenlik
@@ -25,7 +25,9 @@ NFC özelliği NFC destekli ve NFC'si açık fiziksel Android cihaz gerektirir.
 - Tek uygulamada **Bireysel** ve **Kurumsal** hesap oluşturma/giriş akışları
 - Modern, erişilebilir ve role göre özelleşen mobil arayüz
 - Bireysel cüzdan bakiyesi, işlem geçmişi ve anlık bakiye yenileme
-- Kullanıcı onayıyla fiziksel NFC kartını hesaba tanımlama
+- Kullanıcı onayıyla fiziksel NFC kartını hesaba tanımlama veya başka hesaptan devralma
+- Kart devrinde eski sahibine kalıcı uygulama içi uyarı ve cihaz push bildirimi
+- Uygulama kapalıyken NFC kart ödemesi için tutarlı push bildirimi; dokununca işlem geçmişini açma
 - Merchant tarafında ortak Payment Session üzerinden NFC veya QR ile ödeme alma
 - Kullanıcı tarafında kamera ile QR tarama, detay görüntüleme ve açık ödeme onayı
 - Gerçek ödeme kuruluşuna bağlanmayan, açıkça **demo** olarak işaretlenmiş mock bakiye yükleme
@@ -134,6 +136,7 @@ EXPO_PUBLIC_WS_BASE_URL
 EXPO_PUBLIC_APP_ENV
 EXPO_PUBLIC_ENABLE_NFC_DIAGNOSTICS
 EXPO_PUBLIC_USE_MOCK_NFC
+EXPO_PUBLIC_EAS_PROJECT_ID
 ```
 
 `EXPO_PUBLIC_*` değerleri mobil bundle içinde görülebilir; bu değişkenlere secret yazılmaz.
@@ -156,6 +159,8 @@ reddedilmişse uygulama ayarlarına yönlendirir. NFC kapalıysa ham native hata
 NFC'nin kapalı olduğunu açıklar ve doğrudan Android NFC ayarlarını açan bir düğme sunar.
 Kart tanımlama sırasında okutulan tag salt okunur veya yazılabilir NDEF kart değilse kullanıcıya
 uygun ve anlaşılır uyarı gösterilir; kart silinmez, formatlanmaz veya read-only yapılmaz.
+Başka bir hesaba bağlı kart önce yalnız okunur; kullanıcıya bakiyelerin değişmeyeceğini açıklayan
+ayrı bir devir onayı gösterilmeden kart içeriği veya backend sahipliği değiştirilmez.
 
 ## Hesap akışları
 
@@ -167,6 +172,7 @@ transaction'ında oluşur. Kullanıcı:
 - bakiyesini ve geçmişini görür,
 - demo formuyla mock bakiye yükler,
 - açık onay sonrası NFC kartına kendi canonical User UUID'sini yazar ve kartı hesabına bağlar,
+- başka hesaba bağlı bir kartı ayrı uyarı ve onay sonrasında, bakiyeleri değiştirmeden devralır,
 - merchant QR kodunu tarayıp onaylayarak ödeme yapar.
 
 ### Kurumsal
@@ -208,19 +214,32 @@ kart üzerindeki isim kaydedilir; tam kart ve CVV response'a, loga veya database
 
 ## NFC kart eşleme ve ödeme
 
-Kullanıcı uygulamadaki açık onay penceresini kabul ettikten sonra reader başlatılır. 
-Uygulama:
+Kart tanımlama yalnız kullanıcı uygulamadaki açık onay penceresini kabul ettikten sonra
+başlatılır. Uygulama:
 
-1. kullanıcının canonical UUID'sini tek NFC Forum Text record olarak yazar,
-2. sonucu aynı anda yeniden okuyup doğrular,
-3. fiziksel tag UID'sinin yalnız SHA-256 hash'ini backend'e kaydeder.
+1. kartı değiştirmeden okuyup tag sahipliğini backend'den kontrol eder,
+2. kart başka bir hesaba bağlıysa bakiyelerin değişmeyeceğini belirten ayrı devir onayı ister,
+3. onaydan sonra aynı fiziksel kartı tekrar doğrular,
+4. kullanıcının canonical UUID'sini tek NFC Forum Text record olarak yazar,
+5. sonucu aynı anda yeniden okuyup doğrular,
+6. fiziksel tag UID'sinin yalnız SHA-256 hash'ini backend'e kaydeder.
 
 Kart formatlanmaz, silinmez, salt-okunur yapılmaz. Mevcut NDEF kaydı yeni User UUID record'u
-ile değiştirilir. Bir fiziksel tag aynı anda iki kullanıcıya bağlanamaz.
+ile değiştirilir. Devir backend'de Serializable transaction ile atomiktir: eski kullanıcının
+kart eşlemesi kaldırılır, kart yeni kullanıcıya geçer; iki kullanıcının wallet bakiyesi ve finansal
+geçmişi değişmez. Bir fiziksel tag aynı anda yalnız bir kullanıcıya bağlıdır.
+
+Devir commit edildiğinde eski sahip için kalıcı bir `UserNotification` oluşturulur. Uygulama
+açıldığında uyarı gösterilir; kullanıcı kapattığında dismiss hem cihazda hem backend'de saklanır ve
+aynı uyarı yeniden gösterilmez. Aktif push token varsa cihaz bildirimi de commit sonrasında gönderilir.
 
 Ödemede kartın User UUID payload'ı ve kayıtlı tag hash'i birlikte doğrulanır. Tag UID tek
 başına ödeme kimliği değildir. Statik UUID kartının kopyalanabilir olduğu bilinen bir v1
 güvenlik sınırıdır; production hardening için PIN/biometric veya kriptografik güvenlik önlemleri olan kart gerekir.
+
+Başarılı NFC ödemesinde finansal transaction ile aynı atomik sınırda tek bir bildirim/outbox kaydı
+oluşur. Harici Expo Push çağrısı commit sonrasında yapılır; push servisindeki hata ödemeyi geri almaz.
+Bildirim dokunma verisi yalnız uygulama içi `UserHistory` route'u ve transaction kimliği taşır.
 
 ## QR ödeme
 
@@ -243,6 +262,7 @@ GET  /users/:id
 GET  /wallet/me
 GET  /wallet/history
 GET  /wallet/card
+POST /wallet/card/inspect
 POST /wallet/card
 GET  /wallet/top-ups
 POST /wallet/top-up/mock
@@ -254,6 +274,10 @@ GET  /payments/session/:id
 POST /payments/session/:id/cancel
 POST /payments/nfc
 POST /payments/qr
+POST /notifications/devices
+DELETE /notifications/devices
+GET  /notifications/unread
+POST /notifications/:id/dismiss
 GET  /health
 ```
 
@@ -297,11 +321,11 @@ pnpm test:concurrency
 ```
 
 Test harness development/production database'i üzerinde yanlışlıkla işlem yapmamak için database
-adında `test` sözcüğünü zorunlu tutar. Mevcut suite 70 test içerir:
+adında `test` sözcüğünü zorunlu tutar. Mevcut suite 80 test içerir:
 
-- 17 backend unit
-- 35 mobile unit/service
-- 12 gerçek PostgreSQL integration
+- 20 backend unit
+- 41 mobile unit/service
+- 13 gerçek PostgreSQL integration
 - 6 gerçek paralel HTTP concurrency
 
 ## APK ve store build
@@ -325,7 +349,9 @@ yayını için HTTPS backend URL'leri tanımlanmalı ve EAS production profile i
 eas build --platform android --profile production
 ```
 
-Production signing key ve deployment secret'ları repository'ye eklenmez.
+Production signing key, Firebase service-account anahtarı ve deployment secret'ları repository'ye
+eklenmez. `google-services.json` gizli anahtar içermez; Android uygulama kimliğini FCM projesine
+bağlayan native build girdisidir.
 
 ## Security
 

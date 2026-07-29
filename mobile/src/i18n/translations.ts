@@ -79,11 +79,25 @@ export const translations: Record<Language, Record<string, string>> = {
     'card.action': 'Kartı hesabıma tanımla',
     'card.replace': 'Kartı değiştir',
     'card.hold': 'Telefonun arkasına NFC kartınızı yaklaştırın.',
-    'card.confirmTitle': 'Karta hesap kimliği yazılsın mı?',
+    'card.inspectHold': 'Kart sahipliği kontrol ediliyor. NFC kartı telefonun arkasına tutun.',
+    'card.holdAgain': 'Devir için aynı NFC kartı yeniden telefonun arkasına tutun.',
+    'card.confirmTitle': 'Kartı kontrol edip hesabınıza tanımlayalım mı?',
     'card.confirmBody':
-      'Karttaki mevcut NDEF kaydı, yalnız bu hesabın User UUID kaydıyla değiştirilecek. Kart formatlanmayacak, silinmeyecek veya salt okunur yapılmayacak.',
-    'card.confirmAction': 'İzin ver ve yaz',
+      'Kart önce yalnız okunarak mevcut sahipliği kontrol edilir. Yazma işleminden önce gerekirse ayrıca devir onayınız istenir.',
+    'card.confirmAction': 'Kartı kontrol et',
+    'card.transferConfirmTitle': 'Bu kart başka bir hesaba ait',
+    'card.transferConfirmBody':
+      'Bu kartı kendi üzerinize tanımlamak istediğinize emin misiniz? Karttaki hesap kimliği sizin kimliğinizle değiştirilecek; sizin ve önceki sahibin bakiyesi değişmeyecektir.',
+    'card.transferConfirmAction': 'Evet, üzerime tanımla',
     'card.success': 'Kart doğrulandı ve hesabınıza tanımlandı.',
+    'card.transferSuccess':
+      'Kart hesabınıza devredildi. Sizin ve önceki sahibin bakiyesi değişmedi.',
+    'notifications.cardTransferredTitle': 'NFC kartınız devredildi',
+    'notifications.cardTransferredBody':
+      'Kartınız başka bir hesaba tanımlandı. Cüzdan bakiyeniz değişmedi.',
+    'notifications.permissionTitle': 'Bildirim izni gerekli',
+    'notifications.permissionBody':
+      'Kart devri ve kartla yapılan ödemeleri uygulama kapalıyken öğrenmek için bildirim iznini açın.',
     'settings.title': 'Ayarlar',
     'settings.language': 'Uygulama dili',
     'settings.languageHint': 'Tüm uygulama seçtiğiniz dilde gösterilir.',
@@ -144,6 +158,10 @@ export const translations: Record<Language, Record<string, string>> = {
       'Bu hesap seçilen hesap türüne ait değil. Hesap türünü değiştirin.',
     'errors.USER_ALREADY_EXISTS': 'Bu e-posta veya telefon zaten kullanılıyor.',
     'errors.NFC_CARD_ALREADY_BOUND': 'Bu NFC kart başka bir hesaba tanımlı.',
+    'errors.NFC_CARD_TRANSFER_CONFIRMATION_REQUIRED':
+      'Bu kartı devralmak için açık onay vermeniz gerekir.',
+    'errors.NFC_CARD_BINDING_CONFLICT':
+      'Kart sahipliği bu sırada değişti. Lütfen kartı yeniden okutun.',
     'errors.NFC_CARD_NOT_REGISTERED': 'NFC kart kullanıcı hesabına tanımlı değil.',
     'errors.NFC_NOT_SUPPORTED': 'Bu cihaz NFC özelliğini desteklemiyor.',
     'errors.NFC_DISABLED':
@@ -155,6 +173,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'errors.NFC_TAG_CAPACITY_EXCEEDED': 'NFC kartın boş alanı hesap kimliği için yetersiz.',
     'errors.NFC_CARD_VERIFICATION_FAILED':
       'Kart yazıldı ancak güvenli doğrulama tamamlanamadı. Kart hesabınıza bağlanmadı.',
+    'errors.NFC_CARD_CHANGED':
+      'İkinci okutulan kart ilk kontrol edilen kartla aynı değil. Lütfen işlemi yeniden başlatın.',
     'errors.NFC_WRITE_FAILED': 'NFC karta yazma tamamlanamadı. Kartı sabit tutup tekrar deneyin.',
     'errors.NFC_SETTINGS_UNAVAILABLE':
       'NFC ayarları otomatik açılamadı. Telefon ayarlarından NFC’yi açın.',
@@ -250,11 +270,25 @@ export const translations: Record<Language, Record<string, string>> = {
     'card.action': 'Link card to my account',
     'card.replace': 'Replace card',
     'card.hold': 'Hold your NFC card against the back of the phone.',
-    'card.confirmTitle': 'Write your account identity to the card?',
+    'card.inspectHold': 'Checking card ownership. Hold the NFC card against the phone.',
+    'card.holdAgain': 'Hold the same NFC card against the phone again to complete the transfer.',
+    'card.confirmTitle': 'Check and link this card to your account?',
     'card.confirmBody':
-      'The existing NDEF record will be replaced with only this account’s User UUID. The card will not be formatted, erased or made read-only.',
-    'card.confirmAction': 'Allow and write',
+      'The card is read first to check its current ownership. If a transfer is needed, you will be asked for separate confirmation before writing.',
+    'card.confirmAction': 'Check card',
+    'card.transferConfirmTitle': 'This card belongs to another account',
+    'card.transferConfirmBody':
+      'Are you sure you want to link this card to your account? Its account identity will be replaced with yours; neither your balance nor the previous owner’s balance will change.',
+    'card.transferConfirmAction': 'Yes, transfer to me',
     'card.success': 'The card was verified and linked to your account.',
+    'card.transferSuccess':
+      'The card was transferred to your account. Your balance and the previous owner’s balance did not change.',
+    'notifications.cardTransferredTitle': 'Your NFC card was transferred',
+    'notifications.cardTransferredBody':
+      'Your card was linked to another account. Your wallet balance did not change.',
+    'notifications.permissionTitle': 'Notification permission required',
+    'notifications.permissionBody':
+      'Enable notifications to hear about card transfers and card payments while the app is closed.',
     'settings.title': 'Settings',
     'settings.language': 'App language',
     'settings.languageHint': 'The entire app uses your selected language.',
@@ -314,6 +348,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'errors.AUTH_ACCOUNT_TYPE_MISMATCH': 'This account belongs to the other account type.',
     'errors.USER_ALREADY_EXISTS': 'This email or phone is already in use.',
     'errors.NFC_CARD_ALREADY_BOUND': 'This NFC card is linked to another account.',
+    'errors.NFC_CARD_TRANSFER_CONFIRMATION_REQUIRED':
+      'You must explicitly confirm before transferring this card.',
+    'errors.NFC_CARD_BINDING_CONFLICT':
+      'Card ownership changed during this operation. Please scan the card again.',
     'errors.NFC_CARD_NOT_REGISTERED': 'The NFC card is not linked to this user.',
     'errors.NFC_NOT_SUPPORTED': 'This device does not support NFC.',
     'errors.NFC_DISABLED':
@@ -326,6 +364,8 @@ export const translations: Record<Language, Record<string, string>> = {
       'The NFC card does not have enough free space for the account identity.',
     'errors.NFC_CARD_VERIFICATION_FAILED':
       'The card was written but could not be verified, so it was not linked to your account.',
+    'errors.NFC_CARD_CHANGED':
+      'The second card is not the card that was checked. Please start the operation again.',
     'errors.NFC_WRITE_FAILED':
       'Writing to the NFC card did not complete. Hold the card steady and try again.',
     'errors.NFC_SETTINGS_UNAVAILABLE':

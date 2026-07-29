@@ -2,11 +2,12 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module.js';
 import { IdempotencyModule } from '../payment/idempotency/idempotency.module.js';
 import { TransactionModule } from '../transaction/transaction.module.js';
+import { NotificationModule } from '../notification/notification.module.js';
 import { WalletController } from './wallet.controller.js';
 import { WalletService } from './wallet.service.js';
 
 @Module({
-  imports: [AuthModule, IdempotencyModule, TransactionModule],
+  imports: [AuthModule, IdempotencyModule, TransactionModule, NotificationModule],
   controllers: [WalletController],
   providers: [WalletService],
 })

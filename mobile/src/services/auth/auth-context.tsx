@@ -10,6 +10,7 @@ import {
 import type { AccountType, AuthUser, RegisterInput, TokenResponse } from '../../domain/types';
 import { api, configureApiAuth } from '../api/api-client';
 import { tokenStore } from '../storage/token-store';
+import { deactivatePushDevice } from '../notifications/notification-service';
 
 type AuthContextValue = {
   user: AuthUser | null;
@@ -71,6 +72,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const logout = useCallback(async () => {
     const tokens = await tokenStore.load();
     if (tokens) {
+      try {
+        await deactivatePushDevice();
+      } catch {
+        // Device deactivation is best effort; token rotation still protects the account.
+      }
       try {
         await api.post('/auth/logout', { refreshToken: tokens.refreshToken });
       } catch {
