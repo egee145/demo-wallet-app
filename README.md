@@ -1,12 +1,11 @@
 # HepAntalya Wallet
 
-HepAntalya; bireysel kullanıcıların dijital cüzdan, QR ve fiziksel NFC kartıyla ödeme
+HepAntalya; Antalya'daki bireysel kullanıcıların, QR ve fiziksel NFC kartıyla ödeme
 yapabildiği, işletmelerin ise aynı uygulama içinden ödeme alabildiği uçtan uca bir mobil
 cüzdan uygulamasıdır.
 
 Backend NestJS ve Prisma ile geliştirilir, finansal source of truth Supabase PostgreSQL'dir.
-Mobil uygulama React Native Expo Development Build kullanır ve finans tablolarına hiçbir
-zaman doğrudan yazmaz.
+Mobil uygulama React Native Expo Development Build kullanır ve finans tablolarına doğrudan yazmaz.
 
 ## Production
 
@@ -24,16 +23,16 @@ NFC özelliği NFC destekli ve NFC'si açık fiziksel Android cihaz gerektirir.
 ## Öne çıkan özellikler
 
 - Tek uygulamada **Bireysel** ve **Kurumsal** hesap oluşturma/giriş akışları
-- Varsayılan Türkçe arayüz ve Ayarlar'dan kalıcı Türkçe/English seçimi
 - Modern, erişilebilir ve role göre özelleşen mobil arayüz
 - Bireysel cüzdan bakiyesi, işlem geçmişi ve anlık bakiye yenileme
-- Açık kullanıcı onayıyla fiziksel NFC kartını hesaba tanımlama veya başka hesaptan devralma
+- Kullanıcı onayıyla fiziksel NFC kartını hesaba tanımlama veya başka hesaptan devralma
 - Kart devrinde eski sahibine kalıcı uygulama içi uyarı ve cihaz push bildirimi
 - Uygulama kapalıyken NFC kart ödemesi için tutarlı push bildirimi; dokununca işlem geçmişini açma
 - Merchant tarafında ortak Payment Session üzerinden NFC veya QR ile ödeme alma
 - Kullanıcı tarafında kamera ile QR tarama, detay görüntüleme ve açık ödeme onayı
 - Gerçek ödeme kuruluşuna bağlanmayan, açıkça **demo** olarak işaretlenmiş mock bakiye yükleme
 - Decimal para modeli, atomik transfer, idempotency ve gerçek concurrency koruması
+- Varsayılan Türkçe arayüz ve Ayarlar'dan Türkçe/İngilizce dil seçimi
 - JWT access/refresh rotation, role authorization, rate limiting ve güvenli log redaction
 - Docker, Supabase migration, GitHub Actions ve fiziksel Android kabul akışları
 
@@ -153,7 +152,7 @@ pnpm --filter @hepantalya/mobile android
 ```
 
 Expo Go native NFC modülünü içermez; Development Build kullanılmalıdır. Android Emulator
-gerçek fiziksel NFC kartı okuyamaz.
+fiziksel bir NFC okuyucuyu cihaza bağlanmadan NFC okuyamaz, bağlansa da sonuçlar kararlı olmayabilir.
 
 Uygulama QR ekranı ilk açıldığında Android kamera iznini kendisi ister. İzin kalıcı olarak
 reddedilmişse uygulama ayarlarına yönlendirir. NFC kapalıysa ham native hata göstermek yerine
@@ -200,7 +199,7 @@ Idempotency-Key: <UUID>
 Content-Type: application/json
 ```
 
-Demo formu `Ege XXX`, `1111 1111 1111 1111`, `01/11`, `111` gibi biçimsel olarak geçerli
+Demo formu `XXX`, `1111 1111 1111 1111`, `01/11`, `111` gibi biçimsel olarak geçerli
 test verisini kabul eder. Gerçek banka provizyonu veya Luhn kontrolü yapmaz. Şunları reddeder:
 
 - sıfır, negatif veya maksimum üzeri tutar,
@@ -215,7 +214,8 @@ kart üzerindeki isim kaydedilir; tam kart ve CVV response'a, loga veya database
 
 ## NFC kart eşleme ve ödeme
 
-Kart tanımlama varsayılan olarak kapalı bir yazma işlemi değildir. Uygulama:
+Kart tanımlama yalnız kullanıcı uygulamadaki açık onay penceresini kabul ettikten sonra
+başlatılır. Uygulama:
 
 1. kartı değiştirmeden okuyup tag sahipliğini backend'den kontrol eder,
 2. kart başka bir hesaba bağlıysa bakiyelerin değişmeyeceğini belirten ayrı devir onayı ister,
@@ -235,7 +235,7 @@ aynı uyarı yeniden gösterilmez. Aktif push token varsa cihaz bildirimi de com
 
 Ödemede kartın User UUID payload'ı ve kayıtlı tag hash'i birlikte doğrulanır. Tag UID tek
 başına ödeme kimliği değildir. Statik UUID kartının kopyalanabilir olduğu bilinen bir v1
-güvenlik sınırıdır; production hardening için PIN/biometric veya kriptografik kart gerekir.
+güvenlik sınırıdır; production hardening için PIN/biometric veya kriptografik güvenlik önlemleri olan kart gerekir.
 
 Başarılı NFC ödemesinde finansal transaction ile aynı atomik sınırda tek bir bildirim/outbox kaydı
 oluşur. Harici Expo Push çağrısı commit sonrasında yapılır; push servisindeki hata ödemeyi geri almaz.
@@ -245,7 +245,7 @@ Bildirim dokunma verisi yalnız uygulama içi `UserHistory` route'u ve transacti
 
 Merchant QR payload'ı yalnız Payment Session UUID'sidir; amount, Merchant/User ID, JWT veya
 JSON taşımaz. Kullanıcı `expo-camera` ile QR'ı tarar, merchant ve tutarı backend'den yeniden
-alır, açıkça onaylar. Payer User ID JWT subject'inden çözülür.
+alır, uygun görürse açıkça onaylar. Payer User ID JWT subject'inden çözülür.
 
 ## API özeti
 
@@ -320,7 +320,7 @@ pnpm test:integration
 pnpm test:concurrency
 ```
 
-Test harness development/production database'ini yanlışlıkla temizlememek için database
+Test harness development/production database'i üzerinde yanlışlıkla işlem yapmamak için database
 adında `test` sözcüğünü zorunlu tutar. Mevcut suite 80 test içerir:
 
 - 20 backend unit
