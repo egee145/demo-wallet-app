@@ -32,6 +32,7 @@ import { env } from '../config/env';
 import { useI18n } from '../i18n/i18n-context';
 import { useAuth } from '../services/auth/auth-context';
 import { colors } from '../theme';
+import { rootNavigationReadiness } from './navigation-readiness';
 
 const AuthStack = createNativeStackNavigator<AuthStackParams>();
 const UserStack = createNativeStackNavigator<UserStackParams>();
@@ -56,6 +57,12 @@ export function flushNotificationNavigation(role: Role) {
 export function RootNavigation() {
   const { user, restoring } = useAuth();
   const { ready, t } = useI18n();
+  useEffect(
+    () => () => {
+      rootNavigationReadiness.markNotReady();
+    },
+    [],
+  );
   useEffect(() => {
     if (user) {
       const timer = setTimeout(() => flushNotificationNavigation(user.role), 0);
@@ -87,6 +94,7 @@ export function RootNavigation() {
         if (user) {
           flushNotificationNavigation(user.role);
         }
+        rootNavigationReadiness.markReady();
       }}
     >
       {!user ? (
