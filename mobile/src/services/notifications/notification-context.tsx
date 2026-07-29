@@ -7,13 +7,14 @@ import {
   useRef,
   type PropsWithChildren,
 } from 'react';
-import { Alert, AppState, Linking } from 'react-native';
+import { Alert, AppState, InteractionManager, Linking } from 'react-native';
 import type { UserNotification } from '../../domain/types';
 import { useI18n } from '../../i18n/i18n-context';
 import {
   flushNotificationNavigation,
   queueNotificationNavigation,
 } from '../../navigation/root-navigation';
+import { rootNavigationReadiness } from '../../navigation/navigation-readiness';
 import { api } from '../api/api-client';
 import { useAuth } from '../auth/auth-context';
 import { Notifications, registerPushDevice } from './notification-service';
@@ -50,7 +51,7 @@ export function NotificationProvider({ children }: PropsWithChildren) {
   );
 
   const refreshUnread = useCallback(async () => {
-    if (!user || user.role !== 'USER') {
+    if (!user || user.role !== 'USER' || !rootNavigationReadiness.isReady()) {
       return;
     }
     try {
@@ -66,23 +67,33 @@ export function NotificationProvider({ children }: PropsWithChildren) {
         return;
       }
       presented.current.add(notification.id);
-      Alert.alert(
-        t('notifications.cardTransferredTitle'),
-        t('notifications.cardTransferredBody'),
-        [
-          {
-            text: t('common.done'),
-            onPress: () => {
-              void dismiss(notification.id);
+      InteractionManager.runAfterInteractions(() => {
+        Alert.alert(
+          t('notifications.cardTransferredTitle'),
+          t('notifications.cardTransferredBody'),
+          [
+            {
+              text: t('common.done'),
+              onPress: () => {
+                void dismiss(notification.id);
+              },
             },
-          },
-        ],
-        { cancelable: false },
-      );
+          ],
+          { cancelable: false },
+        );
+      });
     } catch {
       // A durable server record lets the app retry on the next foreground event.
     }
   }, [dismiss, t, user]);
+
+  useEffect(
+    () =>
+      rootNavigationReadiness.subscribe(() => {
+        void refreshUnread();
+      }),
+    [refreshUnread],
+  );
 
   useEffect(() => {
     if (!user || user.role !== 'USER') {

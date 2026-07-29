@@ -13,7 +13,7 @@ Son doğrulama: 2026-07-29, Windows 11 x64, Europe/Istanbul.
 | Prisma        | 7.9.1 + `@prisma/adapter-pg`                |
 | Java          | Android Studio JBR 21.0.7                   |
 | Android SDK   | Platform/build-tools 36                     |
-| Expo          | SDK 57, Expo Doctor 20/20                   |
+| Expo          | SDK 57.0.9, Expo Doctor 20/20               |
 | Android cihaz | Fiziksel TECNO CK7n, Android 14/API 34      |
 | Docker        | Docker Desktop Linux engine ve Compose      |
 
@@ -32,7 +32,7 @@ eklenmez.
 - Database: Supabase PostgreSQL, `wallet_app` şeması
 - Runtime database rolü: least-privilege `wallet_backend`
 - Backend container:
-  `ghcr.io/egee145/hepantalya-wallet-api:1.2.0`
+  `ghcr.io/egee145/hepantalya-wallet-api:1.2.1`
 - Northflank container planı: `nf-compute-20`, tek instance
 
 Public health kontrolü HTTP 200, `database: up`, geçerli TLS, HSTS, Helmet güvenlik
@@ -49,10 +49,10 @@ bağımlılığı olmadan bu public endpoint'leri kullanır.
 - Üç migration boş PostgreSQL 17 test database'ine uygulanıyor.
 - Aynı üç migration Supabase production projesinde uygulanmış ve migration status günceldir.
 - Backend unit: **20/20**.
-- Mobile unit/service: **41/41**.
+- Mobile unit/service: **43/43**.
 - PostgreSQL integration: **13/13**.
 - Gerçek paralel HTTP concurrency: **6/6**.
-- Toplam otomatik test: **80/80**.
+- Toplam otomatik test: **82/82**.
 - NestJS production build ve Expo Android export başarılı.
 - Expo Doctor: **20/20**.
 - Exact Node 24.18.0 multi-stage Docker image temiz build edildi.
@@ -67,12 +67,13 @@ sonucu doğrulanır.
 
 | Alan             | Değer                                                                                             |
 | ---------------- | ------------------------------------------------------------------------------------------------- |
-| Dosya            | `HepAntalya-v1.2.0-production.apk`                                                                |
+| Dosya            | `HepAntalya-v1.2.1-production.apk`                                                                |
 | Package          | `com.hepantalya.wallet`                                                                           |
-| Version          | `1.2.0` / code `3`                                                                                |
+| Version          | `1.2.1` / code `4`                                                                                |
 | Min / target SDK | 24 / 36                                                                                           |
-| Boyut            | 44,919,337 byte                                                                                   |
-| SHA-256          | `CE19D5027084883A53F07059AA321FCB2658D2F8DA7A712C48E29A2807BF1363`                                |
+| ABI              | `arm64-v8a`                                                                                       |
+| Boyut            | 37,410,434 byte                                                                                   |
+| SHA-256          | `C12DCA032BDF3FE5624EAD8315B6D9E3FC74F73ADC6A3E72FB9AB9526EC169A5`                                |
 | Signing          | APK Signature Scheme v2, RSA 4096                                                                 |
 | Cert SHA-256     | `D4:B7:82:F3:ED:D0:06:71:CC:8D:EC:39:17:93:12:BE:28:65:5C:8D:F5:37:11:08:25:9A:3D:A0:1B:06:D3:D6` |
 
@@ -104,6 +105,16 @@ production imza sertifikası ve Firebase Android kaynakları APK üzerinde doğr
 - Kamera izni temiz kurulumda `granted=false` iken QR ekranı Android izin penceresini otomatik
   açtı. “Uygulamayı kullanırken” onayından sonra izin `granted=true` oldu ve kamera
   önizlemesi başladı.
+- Uygulama process'i kapalıyken gerçek production NFC ödeme olayı oluşturuldu. Android sistem
+  bildirimi tutarı `1,00 TL` olarak gösterdi; dokununca `Cüzdan hareketleri` ekranı açıldı ve
+  `−1.00 TRY / NFC` ledger kaydı görüntülendi.
+- Uygulama process'i kapalıyken gerçek production kart devri olayı oluşturuldu. Eski sahibin
+  cihazına push geldi; bildirime dokunulan ilk soğuk açılışta kalıcı uyarı hemen gösterildi,
+  `NFC kartım` ekranına yönlendirme çalıştı ve `TAMAM` sonrasında backend `readAt` kaydı
+  oluştu. Sonraki açılışta aynı uyarı tekrarlanmadı.
+- `1.2.1` APK fiziksel cihaza dosya SHA-256 eşitliği doğrulanarak Android PackageManager ile
+  kuruldu. ADB reverse bulunmadan cold start başarılı oldu, production oturumu/bakiye göründü
+  ve Android logunda fatal crash oluşmadı.
 
 Mevcut fiziksel kart yazılabilir olduğu için salt-okunur/yazılamaz kart yolu o kartı kalıcı
 olarak değiştirmeden fiziksel olarak tetiklenemez. Production kodu NDEF status sonucunu

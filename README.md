@@ -11,14 +11,17 @@ Mobil uygulama React Native Expo Development Build kullanır ve finans tablolar�
 
 - Public API: `https://http--hepantalya-api--wxsy4676lspg.code.run/api`
 - Health: `https://http--hepantalya-api--wxsy4676lspg.code.run/api/health`
-- Container: `ghcr.io/egee145/hepantalya-wallet-api:1.2.0`
+- Container: `ghcr.io/egee145/hepantalya-wallet-api:1.2.1`
 - Android release:
-  [HepAntalya-v1.2.0-production.apk](https://github.com/egee145/hepantalya-wallet/releases/download/v1.2.0/HepAntalya-v1.2.0-production.apk)
+  [HepAntalya-v1.2.1-production.apk](https://github.com/egee145/hepantalya-wallet/releases/download/v1.2.1/HepAntalya-v1.2.1-production.apk)
+- APK SHA-256:
+  `C12DCA032BDF3FE5624EAD8315B6D9E3FC74F73ADC6A3E72FB9AB9526EC169A5`
 
 Production APK public HTTPS API ve Supabase PostgreSQL ile çalışır. Uygulamayı kuran kullanıcı için
 Node.js, Docker, ADB reverse, aynı Wi-Fi ağı veya geliştirici bilgisayarı gerekmez. Android güvenlik
 ayarı nedeniyle GitHub'dan indirilen APK'nın kurulmasına bir defaya mahsus izin verilmesi gerekebilir.
-NFC özelliği NFC destekli ve NFC'si açık fiziksel Android cihaz gerektirir.
+APK Android 7.0+ `arm64-v8a` cihazları destekler. NFC özelliği NFC destekli ve NFC'si açık
+fiziksel Android cihaz gerektirir.
 
 ## Öne çıkan özellikler
 
@@ -230,8 +233,9 @@ kart eşlemesi kaldırılır, kart yeni kullanıcıya geçer; iki kullanıcını
 geçmişi değişmez. Bir fiziksel tag aynı anda yalnız bir kullanıcıya bağlıdır.
 
 Devir commit edildiğinde eski sahip için kalıcı bir `UserNotification` oluşturulur. Uygulama
-açıldığında uyarı gösterilir; kullanıcı kapattığında dismiss hem cihazda hem backend'de saklanır ve
-aynı uyarı yeniden gösterilmez. Aktif push token varsa cihaz bildirimi de commit sonrasında gönderilir.
+açıldığında — kart devri push bildirimine dokunulan soğuk açılış dahil — uyarı gösterilir; kullanıcı
+kapattığında dismiss hem cihazda hem backend'de saklanır ve aynı uyarı yeniden gösterilmez. Aktif
+push token varsa cihaz bildirimi de commit sonrasında gönderilir.
 
 Ödemede kartın User UUID payload'ı ve kayıtlı tag hash'i birlikte doğrulanır. Tag UID tek
 başına ödeme kimliği değildir. Statik UUID kartının kopyalanabilir olduğu bilinen bir v1
@@ -321,10 +325,10 @@ pnpm test:concurrency
 ```
 
 Test harness development/production database'i üzerinde yanlışlıkla işlem yapmamak için database
-adında `test` sözcüğünü zorunlu tutar. Mevcut suite 80 test içerir:
+adında `test` sözcüğünü zorunlu tutar. Mevcut suite 82 test içerir:
 
 - 20 backend unit
-- 41 mobile unit/service
+- 43 mobile unit/service
 - 13 gerçek PostgreSQL integration
 - 6 gerçek paralel HTTP concurrency
 
@@ -338,7 +342,10 @@ $env:EXPO_PUBLIC_API_BASE_URL='http://127.0.0.1:3000/api'
 $env:EXPO_PUBLIC_WS_BASE_URL='http://127.0.0.1:3000/payments'
 pnpm --filter @hepantalya/mobile exec expo prebuild --clean --platform android --no-install
 Set-Location mobile/android
-./gradlew.bat assembleRelease -PreactNativeArchitectures=arm64-v8a
+./gradlew.bat assembleRelease `
+  "-Pandroid.enableMinifyInReleaseBuilds=true" `
+  "-Pandroid.enableShrinkResourcesInReleaseBuilds=true" `
+  "-PreactNativeArchitectures=arm64-v8a"
 ```
 
 Bu preview paket USB `adb reverse tcp:3000 tcp:3000` ile local backend'i kullanır. Store
