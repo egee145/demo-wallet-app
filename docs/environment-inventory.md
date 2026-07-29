@@ -33,6 +33,8 @@ eklenmez.
 - Runtime database rolü: least-privilege `wallet_backend`
 - Backend container:
   `ghcr.io/egee145/hepantalya-wallet-api:1.2.2`
+- Northflank immutable image:
+  `ghcr.io/egee145/hepantalya-wallet-api@sha256:64847f0cb26b95b51b147692d5b8128e52b74f732854e7d76ab3db72d68a4f52`
 - Northflank container planı: `nf-compute-20`, tek instance
 
 Public health kontrolü HTTP 200, `database: up`, geçerli TLS, HSTS, Helmet güvenlik
