@@ -100,6 +100,66 @@ describeDatabase('wallet and payment integration', () => {
     expect(await harness.prisma.transaction.count()).toBe(0);
   });
 
+  it('creates one durable notification for an idempotently replayed NFC payment', async () => {
+    const admin = await harness.createAdmin();
+    const user = await harness.registerUser();
+    const merchant = await harness.provisionMerchant(admin.accessToken);
+    await harness.deposit(admin.accessToken, user.user.id, 100).expect(201);
+    const session = await harness.createSession(merchant.accessToken, 50.25);
+    const key = randomUUID();
+
+    await harness
+      .http()
+      .post('/api/notifications/devices')
+      .set('Authorization', `Bearer ${user.accessToken}`)
+      .send({
+        expoPushToken: 'ExpoPushToken[integration_test_device]',
+        platform: 'ANDROID',
+        language: 'tr',
+      })
+      .expect(201);
+
+    const first = await harness
+      .http()
+      .post('/api/payments/nfc')
+      .set('Authorization', `Bearer ${merchant.accessToken}`)
+      .set('Idempotency-Key', key)
+      .send({
+        paymentSessionId: session.id,
+        userId: user.user.id,
+        tagUid: user.nfcTagUid,
+      })
+      .expect(201);
+    const replay = await harness
+      .http()
+      .post('/api/payments/nfc')
+      .set('Authorization', `Bearer ${merchant.accessToken}`)
+      .set('Idempotency-Key', key)
+      .send({
+        paymentSessionId: session.id,
+        userId: user.user.id,
+        tagUid: user.nfcTagUid,
+      })
+      .expect(201);
+
+    expect(replay.body).toEqual(first.body);
+    const notifications = await harness.prisma.userNotification.findMany({
+      where: { userId: user.user.id },
+    });
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0]).toMatchObject({
+      type: 'NFC_PAYMENT_COMPLETED',
+      transactionId: first.body.transactionId,
+      readAt: null,
+      pushSentAt: null,
+    });
+    expect(notifications[0]?.data).toMatchObject({
+      amount: '50.25',
+      currency: 'TRY',
+      route: 'UserHistory',
+    });
+  });
+
   it('rotates refresh tokens and revokes the family when an old token is reused', async () => {
     const user = await harness.registerUser();
     const rotation = await harness
@@ -342,24 +402,90 @@ describeDatabase('wallet and payment integration', () => {
       .expect(400);
   });
 
-  it('prevents one physical NFC tag from being claimed by another user', async () => {
+  it('requires explicit confirmation and transfers a physical NFC tag without moving balances', async () => {
     const first = await harness.registerUser();
     const second = await harness.registerUser();
+    const admin = await harness.createAdmin();
+    await harness.deposit(admin.accessToken, first.user.id, 500).expect(201);
+    await harness.deposit(admin.accessToken, second.user.id, 300).expect(201);
+
+    await harness
+      .http()
+      .post('/api/wallet/card/inspect')
+      .set('Authorization', `Bearer ${second.accessToken}`)
+      .send({ tagUid: first.nfcTagUid })
+      .expect(201)
+      .expect({
+        state: 'OWNED_BY_ANOTHER_USER',
+        transferRequired: true,
+      });
 
     await harness
       .http()
       .post('/api/wallet/card')
       .set('Authorization', `Bearer ${second.accessToken}`)
-      .send({ tagUid: first.nfcTagUid, label: 'Stolen card attempt' })
+      .send({ tagUid: first.nfcTagUid, label: 'Transferred card' })
       .expect(409)
       .expect(({ body }) => {
-        expect(body.code).toBe('NFC_CARD_ALREADY_BOUND');
+        expect(body.code).toBe('NFC_CARD_TRANSFER_CONFIRMATION_REQUIRED');
       });
+
+    await harness
+      .http()
+      .post('/api/wallet/card')
+      .set('Authorization', `Bearer ${second.accessToken}`)
+      .send({
+        tagUid: first.nfcTagUid,
+        label: 'Transferred card',
+        transferConfirmed: true,
+      })
+      .expect(201);
+
+    const [firstWallet, secondWallet] = await Promise.all([
+      harness.prisma.wallet.findUniqueOrThrow({ where: { userId: first.user.id } }),
+      harness.prisma.wallet.findUniqueOrThrow({ where: { userId: second.user.id } }),
+    ]);
+    expect(firstWallet.balance.toFixed(2)).toBe('500.00');
+    expect(secondWallet.balance.toFixed(2)).toBe('300.00');
     expect(
-      await harness.prisma.nfcCard.count({
-        where: { userId: first.user.id, tagUidHash: { not: '' } },
-      }),
-    ).toBe(1);
+      await harness.prisma.nfcCard.findUnique({ where: { userId: first.user.id } }),
+    ).toBeNull();
+    expect(
+      await harness.prisma.nfcCard.findUniqueOrThrow({ where: { userId: second.user.id } }),
+    ).toMatchObject({ label: 'Transferred card' });
+    const unread = await harness
+      .http()
+      .get('/api/notifications/unread')
+      .set('Authorization', `Bearer ${first.accessToken}`)
+      .expect(200);
+    expect(unread.body.items).toHaveLength(1);
+    expect(unread.body.items[0]).toMatchObject({
+      type: 'NFC_CARD_TRANSFERRED',
+      data: { route: 'CardManagement' },
+    });
+
+    await harness
+      .http()
+      .post(`/api/notifications/${unread.body.items[0].id as string}/dismiss`)
+      .set('Authorization', `Bearer ${first.accessToken}`)
+      .expect(204);
+    await harness
+      .http()
+      .get('/api/notifications/unread')
+      .set('Authorization', `Bearer ${first.accessToken}`)
+      .expect(200)
+      .expect({ items: [] });
+
+    await harness
+      .http()
+      .post('/api/wallet/card/inspect')
+      .set('Authorization', `Bearer ${second.accessToken}`)
+      .send({ tagUid: first.nfcTagUid })
+      .expect(201)
+      .expect({
+        state: 'OWNED_BY_CURRENT_USER',
+        transferRequired: false,
+      });
   });
 
   it('prevents updates and deletes of committed ledger transactions', async () => {

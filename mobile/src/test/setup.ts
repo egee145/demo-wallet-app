@@ -35,3 +35,25 @@ jest.mock('expo-crypto', () => {
     }),
   };
 });
+
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    expoConfig: { extra: { eas: { projectId: 'test-project-id' } } },
+    easConfig: null,
+  },
+}));
+
+jest.mock('expo-notifications', () => ({
+  AndroidImportance: { HIGH: 4 },
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(() => Promise.resolve()),
+  getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  getExpoPushTokenAsync: jest.fn(() =>
+    Promise.resolve({ data: 'ExpoPushToken[test-device-token]' }),
+  ),
+  addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  getLastNotificationResponseAsync: jest.fn(() => Promise.resolve(null)),
+}));

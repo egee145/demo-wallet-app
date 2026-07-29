@@ -1,4 +1,4 @@
-import { IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class BindCardDto {
   @IsString()
@@ -11,4 +11,8 @@ export class BindCardDto {
   @MinLength(2)
   @MaxLength(80)
   label!: string;
+
+  @IsOptional()
+  @IsBoolean()
+  transferConfirmed?: boolean;
 }

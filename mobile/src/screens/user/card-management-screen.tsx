@@ -3,7 +3,8 @@ import { Alert, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Muted, Screen, Title } from '../../components/screen';
 import { Button, InfoBanner, Loading, Pill } from '../../components/ui';
-import type { NfcCardSummary } from '../../domain/types';
+import { isSameNfcTag } from '../../domain/nfc-card-transfer';
+import type { NfcCardClaimStatus, NfcCardSummary } from '../../domain/types';
 import { localizedApiError } from '../../i18n/api-error';
 import { useI18n } from '../../i18n/i18n-context';
 import { api } from '../../services/api/api-client';
@@ -42,31 +43,76 @@ export function CardManagementScreen() {
     };
   }, [load]);
 
-  const bind = async () => {
+  const showError = (caught: unknown) => {
+    setMessage('');
+    const code = getNfcErrorCode(caught);
+    setNfcErrorCode(code);
+    setError(code ? localizedNfcError(caught, t) : localizedApiError(caught, t));
+  };
+
+  const writeAndBind = async (inspectedTagUid: string, transferConfirmed: boolean) => {
     if (!user) {
       return;
     }
     setWorking(true);
     setError('');
     setNfcErrorCode(undefined);
-    setMessage(t('card.hold'));
+    setMessage(t(transferConfirmed ? 'card.holdAgain' : 'card.hold'));
     try {
       const provisioned = await getNfcReader().provisionUserId(user.id);
       if (!provisioned.verified || !provisioned.tagId) {
         throw new Error('NFC_CARD_VERIFICATION_FAILED');
       }
+      if (!isSameNfcTag(inspectedTagUid, provisioned.tagId)) {
+        throw new Error('NFC_CARD_CHANGED');
+      }
       const response = await api.post<NfcCardSummary>('/wallet/card', {
         tagUid: provisioned.tagId,
         label: 'HepAntalya Card',
+        transferConfirmed,
       });
       setSummary(response.data);
-      setMessage(t('card.success'));
+      setMessage(t(transferConfirmed ? 'card.transferSuccess' : 'card.success'));
     } catch (caught) {
-      setMessage('');
-      const code = getNfcErrorCode(caught);
-      setNfcErrorCode(code);
-      setError(code ? localizedNfcError(caught, t) : localizedApiError(caught, t));
+      showError(caught);
     } finally {
+      setWorking(false);
+      await getNfcReader().cancel();
+    }
+  };
+
+  const inspect = async () => {
+    setWorking(true);
+    setError('');
+    setNfcErrorCode(undefined);
+    setMessage(t('card.inspectHold'));
+    try {
+      const diagnostics = await getNfcReader().readDiagnostics();
+      if (!diagnostics.tagId) {
+        throw new Error('NFC_CARD_VERIFICATION_FAILED');
+      }
+      const inspectedTagUid = diagnostics.tagId;
+      const response = await api.post<NfcCardClaimStatus>('/wallet/card/inspect', {
+        tagUid: inspectedTagUid,
+      });
+      await getNfcReader().cancel();
+
+      if (response.data.transferRequired) {
+        setWorking(false);
+        setMessage('');
+        Alert.alert(t('card.transferConfirmTitle'), t('card.transferConfirmBody'), [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('card.transferConfirmAction'),
+            onPress: () => void writeAndBind(inspectedTagUid, true),
+          },
+        ]);
+        return;
+      }
+
+      await writeAndBind(inspectedTagUid, false);
+    } catch (caught) {
+      showError(caught);
       setWorking(false);
       await getNfcReader().cancel();
     }
@@ -75,7 +121,7 @@ export function CardManagementScreen() {
   const confirm = () => {
     Alert.alert(t('card.confirmTitle'), t('card.confirmBody'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('card.confirmAction'), onPress: () => void bind() },
+      { text: t('card.confirmAction'), onPress: () => void inspect() },
     ]);
   };
 

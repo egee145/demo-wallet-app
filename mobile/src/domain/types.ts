@@ -41,6 +41,11 @@ export type NfcCardSummary = {
   } | null;
 };
 
+export type NfcCardClaimStatus = {
+  state: 'UNCLAIMED' | 'OWNED_BY_CURRENT_USER' | 'OWNED_BY_ANOTHER_USER';
+  transferRequired: boolean;
+};
+
 export type MockTopUpResult = {
   topUpId: string;
   amount: number;
@@ -70,4 +75,11 @@ export type CreatedPaymentSession = {
   status: 'WAITING';
   expiresAt: string;
   qrPayload: string;
+};
+
+export type UserNotification = {
+  id: string;
+  type: 'NFC_CARD_TRANSFERRED' | 'NFC_PAYMENT_COMPLETED';
+  data: Record<string, unknown>;
+  createdAt: string;
 };

@@ -13,8 +13,10 @@ import { canonicalHash } from '../common/utils/canonical-hash.js';
 import { hashTagUid } from '../common/utils/nfc-card.js';
 import { IdempotencyService } from '../payment/idempotency/idempotency.service.js';
 import { TransactionService } from '../transaction/transaction.service.js';
+import { NotificationService } from '../notification/notification.service.js';
 import type { BindCardDto } from './dto/bind-card.dto.js';
 import type { DepositDto } from './dto/deposit.dto.js';
+import type { InspectCardDto } from './dto/inspect-card.dto.js';
 import type { MockTopUpDto } from './dto/mock-top-up.dto.js';
 
 @Injectable()
@@ -23,6 +25,7 @@ export class WalletService {
     private readonly prisma: PrismaService,
     private readonly idempotency: IdempotencyService,
     private readonly transactions: TransactionService,
+    private readonly notifications: NotificationService,
   ) {}
 
   async me(userId: string) {
@@ -60,21 +63,57 @@ export class WalletService {
     };
   }
 
+  async inspectCard(userId: string, dto: InspectCardDto) {
+    const card = await this.prisma.nfcCard.findUnique({
+      where: { tagUidHash: hashTagUid(dto.tagUid) },
+      select: { userId: true },
+    });
+    return {
+      state: !card
+        ? ('UNCLAIMED' as const)
+        : card.userId === userId
+          ? ('OWNED_BY_CURRENT_USER' as const)
+          : ('OWNED_BY_ANOTHER_USER' as const),
+      transferRequired: Boolean(card && card.userId !== userId),
+    };
+  }
+
   async bindCard(userId: string, dto: BindCardDto) {
     const tagUidHash = hashTagUid(dto.tagUid);
     const label = dto.label.trim();
     try {
-      const card = await this.prisma.$transaction(
+      const result = await this.prisma.$transaction(
         async (tx) => {
-          const claimed = await tx.nfcCard.findUnique({ where: { tagUidHash } });
+          const claimedRows = await tx.$queryRaw<Array<{ id: string; userId: string }>>(Prisma.sql`
+            SELECT "id", "user_id" AS "userId"
+            FROM "wallet_app"."nfc_cards"
+            WHERE "tag_uid_hash" = ${tagUidHash}
+            FOR UPDATE
+          `);
+          const claimed = claimedRows[0];
           if (claimed && claimed.userId !== userId) {
-            throw new DomainException(
-              'NFC_CARD_ALREADY_BOUND',
-              'Bu NFC kart başka bir kullanıcıya tanımlı.',
-              HttpStatus.CONFLICT,
-            );
+            if (!dto.transferConfirmed) {
+              throw new DomainException(
+                'NFC_CARD_TRANSFER_CONFIRMATION_REQUIRED',
+                'Bu NFC kart başka bir kullanıcıya tanımlı. Devir için açık onay gereklidir.',
+                HttpStatus.CONFLICT,
+              );
+            }
+
+            const notification = await this.notifications.createCardTransfer(tx, claimed.userId);
+            await tx.nfcCard.deleteMany({ where: { userId } });
+            const card = await tx.nfcCard.update({
+              where: { id: claimed.id },
+              data: {
+                userId,
+                label,
+                status: NfcCardStatus.ACTIVE,
+                boundAt: new Date(),
+              },
+            });
+            return { card, notificationId: notification.id };
           }
-          return tx.nfcCard.upsert({
+          const card = await tx.nfcCard.upsert({
             where: { userId },
             create: {
               userId,
@@ -89,16 +128,20 @@ export class WalletService {
               boundAt: new Date(),
             },
           });
+          return { card, notificationId: undefined };
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       );
+      if (result.notificationId) {
+        void this.notifications.deliver(result.notificationId);
+      }
       return {
         bound: true,
         card: {
-          id: card.id,
-          label: card.label,
-          status: card.status,
-          boundAt: card.boundAt.toISOString(),
+          id: result.card.id,
+          label: result.card.label,
+          status: result.card.status,
+          boundAt: result.card.boundAt.toISOString(),
         },
       };
     } catch (error) {
@@ -109,8 +152,8 @@ export class WalletService {
         error.code === 'P2002'
       ) {
         throw new DomainException(
-          'NFC_CARD_ALREADY_BOUND',
-          'Bu NFC kart başka bir kullanıcıya tanımlı.',
+          'NFC_CARD_BINDING_CONFLICT',
+          'NFC kart sahipliği eşzamanlı olarak değişti. Kartı yeniden okutun.',
           HttpStatus.CONFLICT,
         );
       }

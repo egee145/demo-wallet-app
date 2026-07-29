@@ -12,4 +12,6 @@ ios/
 *.log
 work/
 outputs/
+*-firebase-adminsdk-*.json
+firebase-service-account*.json
 backend/src/generated/

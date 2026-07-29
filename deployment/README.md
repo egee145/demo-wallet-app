@@ -22,6 +22,11 @@ entered in Northflank's encrypted runtime environment and must never be committe
 is intentionally excluded from the runtime service because it is only used by the release
 migration job.
 
+`EXPO_PUSH_ENABLED=true` enables post-commit delivery through Expo Push Service. An optional
+`EXPO_PUSH_ACCESS_TOKEN` belongs only in Northflank's encrypted runtime environment when Expo
+enhanced push security is enabled. Firebase service-account JSON and Android signing material must
+never be stored in this repository or the backend image.
+
 The deployment references an immutable GHCR SHA-256 digest rather than a mutable tag. The public
 port terminates TLS at Northflank and supports both REST and Socket.IO WebSocket traffic.
 
@@ -38,7 +43,8 @@ verified.
 4. Build the exact Git commit, publish the container and pin the resulting registry digest.
 5. Confirm the public HTTPS `/api/health` response and security headers.
 6. Build the mobile release with that exact public API and WebSocket URL.
-7. Run physical-device smoke, account, wallet, mock top-up, NFC and QR acceptance tests.
+7. Run physical-device smoke, account, wallet, mock top-up, NFC, push deep-link and QR acceptance
+   tests.
 
 Do not run `prisma db push`, reset a shared database, expose `DIRECT_URL` to the container, or
 place backend credentials in any `EXPO_PUBLIC_*` variable.

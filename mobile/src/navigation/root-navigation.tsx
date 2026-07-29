@@ -1,8 +1,15 @@
+import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { NavigationContainer, type Theme } from '@react-navigation/native';
+import {
+  createNavigationContainerRef,
+  NavigationContainer,
+  type Theme,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import type { AuthStackParams, MerchantStackParams, UserStackParams } from './types';
+import type { Role } from '../domain/types';
+import type { NotificationRoute } from '../services/notifications/notification-routing';
 import { LoginScreen } from '../screens/auth/login-screen';
 import { NfcDiagnosticsScreen } from '../screens/diagnostics/nfc-diagnostics-screen';
 import { MerchantHistoryScreen, UserHistoryScreen } from '../screens/history/history-screens';
@@ -29,10 +36,33 @@ import { colors } from '../theme';
 const AuthStack = createNativeStackNavigator<AuthStackParams>();
 const UserStack = createNativeStackNavigator<UserStackParams>();
 const MerchantStack = createNativeStackNavigator<MerchantStackParams>();
+type RootNavigationParams = AuthStackParams & UserStackParams & MerchantStackParams;
+export const navigationRef = createNavigationContainerRef<RootNavigationParams>();
+let pendingNotificationRoute: NotificationRoute | null = null;
+
+export function queueNotificationNavigation(route: NotificationRoute) {
+  pendingNotificationRoute = route;
+}
+
+export function flushNotificationNavigation(role: Role) {
+  if (!pendingNotificationRoute || !navigationRef.isReady() || role !== 'USER') {
+    return;
+  }
+  const route = pendingNotificationRoute;
+  pendingNotificationRoute = null;
+  navigationRef.navigate(route);
+}
 
 export function RootNavigation() {
   const { user, restoring } = useAuth();
   const { ready, t } = useI18n();
+  useEffect(() => {
+    if (user) {
+      const timer = setTimeout(() => flushNotificationNavigation(user.role), 0);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [user]);
   if (restoring || !ready) {
     return (
       <View style={styles.loading}>
@@ -50,7 +80,15 @@ export function RootNavigation() {
   };
 
   return (
-    <NavigationContainer theme={navigationTheme}>
+    <NavigationContainer
+      ref={navigationRef}
+      theme={navigationTheme}
+      onReady={() => {
+        if (user) {
+          flushNotificationNavigation(user.role);
+        }
+      }}
+    >
       {!user ? (
         <AuthStack.Navigator>
           <AuthStack.Screen component={LoginScreen} name="Login" options={{ headerShown: false }} />

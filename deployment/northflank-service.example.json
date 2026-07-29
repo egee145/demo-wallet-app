@@ -32,6 +32,8 @@
     "DATABASE_URL": "<set-in-Northflank-secret-store>",
     "DB_POOL_MAX": "5",
     "JWT_ACCESS_SECRET": "<set-in-Northflank-secret-store>",
+    "EXPO_PUSH_ENABLED": "true",
+    "EXPO_PUSH_ACCESS_TOKEN": "<optional-set-in-Northflank-secret-store>",
     "ACCESS_TOKEN_TTL": "15m",
     "REFRESH_TOKEN_TTL_DAYS": "30",
     "CORS_ORIGINS": "https://ege07.com,https://www.ege07.com",

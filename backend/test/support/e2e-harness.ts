@@ -59,6 +59,8 @@ export class E2eHarness {
     this.throttlerStorage.storage.clear();
     await this.prisma.$executeRawUnsafe(`
       TRUNCATE TABLE
+        "wallet_app"."user_notifications",
+        "wallet_app"."push_devices",
         "wallet_app"."wallet_top_ups",
         "wallet_app"."nfc_cards",
         "wallet_app"."wallet_adjustments",

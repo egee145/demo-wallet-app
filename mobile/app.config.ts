@@ -6,6 +6,8 @@ const mockNfc = process.env.EXPO_PUBLIC_USE_MOCK_NFC === 'true';
 const provisioningUserId = process.env.EXPO_PUBLIC_NFC_PROVISION_USER_ID;
 const apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
 const wsBaseUrl = process.env.EXPO_PUBLIC_WS_BASE_URL;
+const easProjectId =
+  process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? 'b70b8bd2-7d34-4f2f-8460-9206c5c5f5ac';
 
 if (isProduction && (diagnostics || mockNfc || provisioningUserId)) {
   throw new Error('NFC diagnostics, provisioning and mock NFC must be disabled in production');
@@ -18,7 +20,8 @@ if (isProduction && (!apiBaseUrl?.startsWith('https://') || !wsBaseUrl?.startsWi
 const config: ExpoConfig = {
   name: 'HepAntalya',
   slug: 'hepantalya-wallet',
-  version: '1.1.0',
+  owner: 'egee72',
+  version: '1.2.0',
   orientation: 'portrait',
   userInterfaceStyle: 'light',
   newArchEnabled: true,
@@ -36,6 +39,13 @@ const config: ExpoConfig = {
     'expo-dev-client',
     'expo-secure-store',
     [
+      'expo-notifications',
+      {
+        color: '#00695C',
+        defaultChannel: 'wallet-events',
+      },
+    ],
+    [
       'expo-camera',
       {
         cameraPermission: 'Ödeme QR kodunu taramak için kamera erişimi gereklidir.',
@@ -46,8 +56,13 @@ const config: ExpoConfig = {
   ],
   android: {
     package: 'com.hepantalya.wallet',
-    versionCode: 2,
-    permissions: ['android.permission.NFC', 'android.permission.CAMERA'],
+    versionCode: 3,
+    googleServicesFile: './google-services.json',
+    permissions: [
+      'android.permission.NFC',
+      'android.permission.CAMERA',
+      'android.permission.POST_NOTIFICATIONS',
+    ],
     adaptiveIcon: {
       foregroundImage: './assets/hepantalya-icon.png',
       backgroundColor: '#00695C',
@@ -59,6 +74,7 @@ const config: ExpoConfig = {
   },
   extra: {
     appEnv: process.env.EXPO_PUBLIC_APP_ENV ?? 'development',
+    eas: easProjectId ? { projectId: easProjectId } : undefined,
   },
 };
 

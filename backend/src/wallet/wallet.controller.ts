@@ -9,6 +9,7 @@ import { PaginationDto } from '../common/dto/pagination.dto.js';
 import { requireIdempotencyKey } from '../common/utils/idempotency-key.js';
 import { BindCardDto } from './dto/bind-card.dto.js';
 import { DepositDto } from './dto/deposit.dto.js';
+import { InspectCardDto } from './dto/inspect-card.dto.js';
 import { MockTopUpDto } from './dto/mock-top-up.dto.js';
 import { WalletService } from './wallet.service.js';
 
@@ -33,6 +34,12 @@ export class WalletController {
   @Get('card')
   card(@CurrentUser() user: JwtUser) {
     return this.wallets.card(user.id);
+  }
+
+  @Roles(Role.USER)
+  @Post('card/inspect')
+  inspectCard(@CurrentUser() user: JwtUser, @Body() dto: InspectCardDto) {
+    return this.wallets.inspectCard(user.id, dto);
   }
 
   @Roles(Role.USER)
