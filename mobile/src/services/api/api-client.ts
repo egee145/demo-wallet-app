@@ -1,8 +1,10 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { env } from '../../config/env';
 import type { TokenResponse } from '../../domain/types';
+import { accessTokenExpiresWithin } from '../auth/access-token';
 import { tokenStore } from '../storage/token-store';
 
+const ACCESS_TOKEN_REFRESH_WINDOW_SECONDS = 30;
 let accessToken: string | null = null;
 let refreshPromise: Promise<string | null> | null = null;
 let authFailure: (() => void) | undefined;
@@ -21,7 +23,14 @@ export function configureApiAuth(options: {
   authFailure = options.onAuthFailure;
 }
 
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  if (accessToken && accessTokenExpiresWithin(accessToken, ACCESS_TOKEN_REFRESH_WINDOW_SECONDS)) {
+    const nextAccess = await refreshAccessTokenSingleFlight();
+    if (!nextAccess) {
+      authFailure?.();
+      throw new AxiosError('Access token refresh failed.', 'AUTH_REFRESH_FAILED', config);
+    }
+  }
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
@@ -39,10 +48,7 @@ api.interceptors.response.use(
     }
 
     config._refreshed = true;
-    refreshPromise ??= refreshAccessToken().finally(() => {
-      refreshPromise = null;
-    });
-    const nextAccess = await refreshPromise;
+    const nextAccess = await refreshAccessTokenSingleFlight();
     if (!nextAccess) {
       authFailure?.();
       throw error;
@@ -51,6 +57,13 @@ api.interceptors.response.use(
     return api.request(config);
   },
 );
+
+function refreshAccessTokenSingleFlight(): Promise<string | null> {
+  refreshPromise ??= refreshAccessToken().finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
+}
 
 async function refreshAccessToken(): Promise<string | null> {
   const stored = await tokenStore.load();

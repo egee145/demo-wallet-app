@@ -21,7 +21,7 @@ const config: ExpoConfig = {
   name: 'HepAntalya',
   slug: 'hepantalya-wallet',
   owner: 'egee72',
-  version: '1.2.1',
+  version: '1.2.2',
   orientation: 'portrait',
   userInterfaceStyle: 'light',
   newArchEnabled: true,
@@ -56,7 +56,7 @@ const config: ExpoConfig = {
   ],
   android: {
     package: 'com.hepantalya.wallet',
-    versionCode: 4,
+    versionCode: 5,
     googleServicesFile: './google-services.json',
     permissions: [
       'android.permission.NFC',

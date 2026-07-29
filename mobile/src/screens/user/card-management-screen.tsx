@@ -85,7 +85,7 @@ export function CardManagementScreen() {
     setWorking(true);
     setError('');
     setNfcErrorCode(undefined);
-    setMessage(t('card.inspectHold'));
+    setMessage('');
     try {
       const diagnostics = await getNfcReader().readDiagnostics();
       if (!diagnostics.tagId) {
